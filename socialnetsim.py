@@ -30,49 +30,48 @@ def load_network(graph, network):
 
 def main():
     """
-    Contains driver code for the project
-    :return: None
+    Driver code to run the misinformation spreading simulation.
     """
-    graph = Graph()  # createsnew graph object
-    pro_like = 0  # intilize probabily of liking a post to zeero
-    pro_follow = 0  # intilize probabily of folloing a person a post to zero
-    time = 1  # will tell time sep number
-    time_step = []  # this will contain list of nodes that will be affected with each timestep
+    if len(argv) < 3:  # Ensure correct number of command-line arguments
+        print("Usage: SocialSim -s [network_file] [prob_share]")
+        return
+
+    mode, network_file, prob_share_str = argv[1], argv[2], argv[3]
+
+    if mode != "-s":  # Check if the simulation mode flag is correct
+        print("Invalid mode. Use '-s' for simulation mode.")
+        return
+
     try:
-        if not len(argv) >= 2:  # if we dont have required arguments than show usage information
-            print("Usage: SocialSim -s [network_file] [event_file] [prob_like] [prob_follow]")
-            print("-s : simulation mode")
-            return
-        load_network(graph, argv[2])
-        pro_follow = int(argv[5])
-        pro_like = int(argv[4])
-        misinfo = open(argv[3], "r")
-        for line in misinfo:
-            node = graph.list.find_node(line[1])
-            if node is not None:
-                node.posts.append(line[2])
-                time_step.append(node)
-                if time_step:
-                    if random.random() <= pro_like:
-                        n = time_step[0].value.head
-                        while n:
-                            check += 1
-                            node.likes += 1
-                            if random.random() <= pro_follow:
-                                n1 = graph.list.find_node(str(n.value))
-                                if n1 is not None:
-                                    n1 = n1.value.head
-                                    while n1:
-                                        if node.value.find_node(str(n1.value)) is None:
-                                            graph.connect(str(node), str(n1.value))
-                                        n1 = n1.next_node
-                            n = n.next_node
-                        time_step = time_step[1:]
-                time += 1
-            file = open("simulation_Log.txt", "w")
-            file.close()
-    except Exception as ex:
-        print(ex)
+        prob_share = float(prob_share_str)  # Convert probability share argument to float
+    except ValueError:
+        print("Invalid prob_share value. Please provide a valid float.")
+        return
+
+    graph = Graph()  # Initialize the graph object
+
+    # Load the network from the file
+    load_network(graph, network_file)
+
+    # Randomly select an initial node to start spreading misinformation
+    initial_node = graph.get_random_node()
+    if not initial_node:
+        print("The network is empty. Cannot proceed with the simulation.")
+        return
+
+    # Output the node from which misinformation will start spreading
+    print(f"Starting misinformation from node: {initial_node.get_value()} with prob_share={prob_share}")
+
+    # Run the simulation
+    spread_result = graph.spread_misinformation(initial_node, prob_share)
+
+    # Output the simulation results
+    print("\nMisinformation Spread Result:")
+    for node, source in spread_result.items():
+        source_str = "Initial Node" if source is None else source
+        print(f"Node {node} received misinformation from {source_str}")
+
+if __name__ == "__main__":
+    main()
 
 
-if __name__ == "__main__": main()

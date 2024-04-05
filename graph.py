@@ -1,4 +1,5 @@
 from list import LinkedList
+import random
 
 
 class Graph:
@@ -67,3 +68,39 @@ class Graph:
             s = s + n.value.value + "--> " + str(n.get_value()) + "\n"
             n = n.next_node
         return s
+    
+    def get_random_node(self):
+        """
+        Selects a random node from the graph.
+        :return: A randomly selected node.
+        """
+        nodes = []
+        n = self.list.head
+        while n:
+            nodes.append(n.value)
+            n = n.next_node
+        return random.choice(nodes) if nodes else None
+    
+    def spread_misinformation(self, initial_node, prob_share=0.5):
+        """
+        Simulates the spreading of misinformation from an initial node.
+        :param initial_node: The node from which the misinformation starts.
+        :param prob_share: Probability of sharing the misinformation.
+        :return: Dictionary tracking the misinformation spread.
+        """
+        infected = {initial_node.get_value(): None}  # Track the spread
+        frontier = [initial_node]  # Nodes to check in the current iteration
+
+        while frontier:
+            next_frontier = []
+            for node in frontier:
+                # Attempt to spread misinformation to each connection
+                connection_node = node.value.head
+                while connection_node:
+                    if connection_node.get_value() not in infected and random.random() < prob_share:
+                        infected[connection_node.get_value()] = node.get_value()
+                        next_frontier.append(connection_node)
+                    connection_node = connection_node.next_node
+            frontier = next_frontier
+
+        return infected
