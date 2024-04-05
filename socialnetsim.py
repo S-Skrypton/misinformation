@@ -1,3 +1,4 @@
+import random
 from list import LinkedList
 from node import Node
 from pickle import dump, load, HIGHEST_PROTOCOL  # importing pikckle for saving graph object
@@ -72,4 +73,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
 
