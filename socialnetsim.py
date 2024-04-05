@@ -1,3 +1,4 @@
+import random
 from list import LinkedList
 from node import Node
 from pickle import dump, load, HIGHEST_PROTOCOL  # importing pikckle for saving graph object
@@ -46,50 +47,30 @@ def main():
         pro_follow = int(argv[5])
         pro_like = int(argv[4])
         misinfo = open(argv[3], "r")
-        node = graph.list.find_node(line[1])
-        if node is not None:
-            node.posts.append(line[2])
-            time_step.append(node)
-            if time_step:
-                if pro_like >= 0.5:
-                    n = time_step[0].value.head
-                    while n:
-                        check += 1
-                        node.likes += 1
-                        if pro_follow >= 0.5:
-                            n1 = graph.list.find_node(str(n.value))
-                            if n1 is not None:
-                                n1 = n1.value.head
-                                while n1:
-                                    if check > 100:
-                                        break
-                                    check += 1
-                                    if node.value.find_node(str(n1.value)) is None:
-                                        graph.connect(str(node), str(n1.value))
-
-                                    n1 = n1.next_node
-                        n = n.next_node
-                    time_step = time_step[1:]
-            time += 1
-        file = open("simulation_Log.txt", "w")
-        likes = []
-        person = graph.list.head
-        file.write("\t\t\tPeople in order of popularity.\n")
-        while person:
-            likes.append((person.likes, person.value, person.posts, person.fol, person.flrs))
-            person = person.next_node
-        likes.sort(key=lambda t: t[0], reverse=True)
-        for like in likes:
-            file.write("\t\tPeople: " + str(like[1].value) + " Total Likes: " + str(like[0]) + "\n")
-        file.write("\t\t\tPosts in order of popularity.\n")
-        for like in likes:
-            post = like[2]
-            for p in post:
-                file.write("\t\tPost: " + str(p) + "\n")
-        for like in likes:
-            file.write("\t\t" + str(like[1].value) + "'s record:\n\t\t\tPosts # " + str(len(like[2])) + "\n")
-            file.write("\t\t\tFollowers # " + str(like[4]) + "\n\t\t\tFollowing # " + str(like[3]) + "\n")
-        file.close()
+        for line in misinfo:
+            node = graph.list.find_node(line[1])
+            if node is not None:
+                node.posts.append(line[2])
+                time_step.append(node)
+                if time_step:
+                    if random.random() <= pro_like:
+                        n = time_step[0].value.head
+                        while n:
+                            check += 1
+                            node.likes += 1
+                            if random.random() <= pro_follow:
+                                n1 = graph.list.find_node(str(n.value))
+                                if n1 is not None:
+                                    n1 = n1.value.head
+                                    while n1:
+                                        if node.value.find_node(str(n1.value)) is None:
+                                            graph.connect(str(node), str(n1.value))
+                                        n1 = n1.next_node
+                            n = n.next_node
+                        time_step = time_step[1:]
+                time += 1
+            file = open("simulation_Log.txt", "w")
+            file.close()
     except Exception as ex:
         print(ex)
 
