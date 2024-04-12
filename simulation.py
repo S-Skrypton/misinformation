@@ -19,7 +19,7 @@ def create_social_network(num_nodes):
         if user_type == 'celebrity':
             repost_probability = 0.15
         elif user_type == 'common':
-            repost_probability = 0.05
+            repost_probability = 0.03
         else:
             repost_probability = 0.01
         G.add_node(i, followers=[], followings=[], type=user_type, repost_probability=repost_probability)
@@ -47,7 +47,7 @@ def create_social_network(num_nodes):
             if i != follower:  # avoid self-following
                 G.add_edge(follower, i)
                 G.nodes[i]['followers'].append(follower)
-        
+
         for following in followings:
             if i != following: 
                 G.add_edge(i, following)
@@ -65,7 +65,7 @@ def simulate_message_post(G):
     message_tree = nx.DiGraph()
     queue = [(initial_poster, 0)]
     message_tree.add_node(initial_poster, level=0)
-    
+
     while queue:
         current_node, level = queue.pop(0)
         followers = G.nodes[current_node]['followers']
@@ -74,7 +74,7 @@ def simulate_message_post(G):
                 message_tree.add_node(follower, level=level+1)
                 message_tree.add_edge(current_node, follower)
                 queue.append((follower, level+1))
-    
+
     return message_tree
 
 def visualize_message_spread(message_tree, G):
