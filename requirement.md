@@ -15,6 +15,9 @@ We first randomly generate 430 nodes, assign them as 3 types of people. Let's sa
 
 We randomly pick a node as a starting point, post an information and starting to generate the spreading tree. The simulation stopped if the whole network is infected or it can no longer be further reposted.
 
+### 3.1 notice
+We need to modify our parameters based on some human social networks study
+
 ## 4. Simulation Result
 The result should be a tree structure, and a traverse function is needed to show all the spreading paths.
 
@@ -27,9 +30,10 @@ There are 4 types of action we can take to intervene with the misinformation:
 1: reduce 25% of the repost probability
 2: reduce 50% of the repost probability
 3: reduce 100% of the repost probability
+note: action should be attribute of the poster
 
-Their corresponding cost:
-$0, e, e^2, e^3$
+Their corresponding cost: (exponentially increasing)
+$0, 10, 10^2, 10^3$
 
 ## 7. RL training input
 experience tuple:
@@ -38,5 +42,8 @@ experience tuple:
 \]
 $s$ is the current node, $a$ is the current action, $r$ is the reward function, $s'$ is the next node on the spreading path.
 \[
-    r = cost(a) + cost(next \ node's \ type)
+    r = -(cost(a) + cost(next \ node's \ type))
 \]
+
+## 8. Baseline
+take one action all the time and compare with our result
