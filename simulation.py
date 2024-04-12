@@ -7,7 +7,7 @@ def create_social_network(num_nodes):
     """Create social network graph."""
     G = nx.DiGraph()
     # at most min(10%, 200) celebrities
-    num_celebrities = min(int(0.01 * num_nodes), 100) 
+    num_celebrities = min(int(0.04 * num_nodes), 100) 
     # at most min(20%, 400) robots
     num_robots = min(int(0.05 * num_nodes), 500)       
     num_common = num_nodes - num_celebrities - num_robots
@@ -93,14 +93,14 @@ def visualize_message_spread(message_tree, G):
         elif G.nodes[node]['type'] == 'common':
             color_map.append('skyblue')  # Skyblue for common users
         else:
-            color_map.append('lightgray')  # Light gray for robots
+            color_map.append('pink')  # Light gray for robots
 
     # Draw the graph with assigned colors
     nx.draw(message_tree, pos, with_labels=True, node_size=500, node_color=color_map, font_size=8, font_weight='bold', arrowstyle='-|>', arrowsize=10)
 
     celebrity_patch = mpatches.Patch(color='gold', label='Celebrity')
     common_patch = mpatches.Patch(color='skyblue', label='Common user')
-    robot_patch = mpatches.Patch(color='lightgray', label='Robot')
+    robot_patch = mpatches.Patch(color='pink', label='Robot')
     plt.legend(handles=[celebrity_patch, common_patch, robot_patch], loc='upper right')
     plt.title("Message Spread Visualization as a Tree")
     plt.savefig("Message_Traversal_Tree")
