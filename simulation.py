@@ -48,7 +48,12 @@ def create_social_network(num_nodes):
     return G
 
 def simulate_message_post(G):
-    initial_poster = random.choice(list(G.nodes()))
+    """Simulate message traversal in the network."""
+    while True:
+        initial_poster = random.choice(list(G.nodes))
+        # Check if the node has any followers
+        if len(G.nodes[initial_poster]['followers']) > 0:
+            break
     message_tree = nx.DiGraph()
     queue = [(initial_poster, 0)]
     message_tree.add_node(initial_poster, level=0)
@@ -57,7 +62,7 @@ def simulate_message_post(G):
         current_node, level = queue.pop(0)
         followers = G.nodes[current_node]['followers']
         for follower in followers:
-            if follower not in message_tree and random.random() < G.nodes[follower]['repost_probability']:
+            if follower not in message_tree and random.random() < G.nodes[current_node]['repost_probability']:
                 message_tree.add_node(follower, level=level+1)
                 message_tree.add_edge(current_node, follower)
                 queue.append((follower, level+1))
@@ -72,7 +77,7 @@ def visualize_message_spread(message_tree):
 
 if __name__ == "__main__":
     random.seed(42)
-    num_users = 500
+    num_users = 430
     G = create_social_network(num_users)
     message_tree = simulate_message_post(G)
     visualize_message_spread(message_tree)
