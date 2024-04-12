@@ -1,6 +1,7 @@
 import networkx as nx
 import random
 import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
 def create_social_network(num_nodes):
     """Create social network graph."""
@@ -69,9 +70,31 @@ def simulate_message_post(G):
     
     return message_tree
 
-def visualize_message_spread(message_tree):
+def visualize_message_spread(message_tree, G):
+    # Set figure size
+    plt.figure(figsize=(20, 15))  # Increase figure size as needed
+
+    # Improve layout
     pos = nx.multipartite_layout(message_tree, subset_key="level")
-    nx.draw(message_tree, pos, with_labels=True, node_size=500, node_color='lightblue', font_size=8, font_weight='bold', arrowstyle='-|>', arrowsize=10)
+    #pos = nx.spring_layout(message_tree, k=0.15, iterations=20)  # Adjust k for spacing and iterations for layout precision
+
+    # Assign colors based on the type of user
+    color_map = []
+    for node in message_tree:
+        if G.nodes[node]['type'] == 'celebrity':
+            color_map.append('gold')  # Gold for celebrities
+        elif G.nodes[node]['type'] == 'common':
+            color_map.append('skyblue')  # Skyblue for common users
+        else:
+            color_map.append('lightgray')  # Light gray for robots
+
+    # Draw the graph with assigned colors
+    nx.draw(message_tree, pos, with_labels=True, node_size=500, node_color=color_map, font_size=8, font_weight='bold', arrowstyle='-|>', arrowsize=10)
+
+    celebrity_patch = mpatches.Patch(color='gold', label='Celebrity')
+    common_patch = mpatches.Patch(color='skyblue', label='Common user')
+    robot_patch = mpatches.Patch(color='lightgray', label='Robot')
+    plt.legend(handles=[celebrity_patch, common_patch, robot_patch], loc='upper right')
     plt.title("Message Spread Visualization as a Tree")
     plt.savefig("Message_Traversal_Tree")
 
@@ -96,8 +119,8 @@ def save_paths_to_file(message_tree, filename="message_paths.txt"):
 
 if __name__ == "__main__":
     random.seed(42)
-    num_users = 430
+    num_users = 500
     G = create_social_network(num_users)
     message_tree = simulate_message_post(G)
-    visualize_message_spread(message_tree)
+    visualize_message_spread(message_tree, G)
     save_paths_to_file(message_tree)
