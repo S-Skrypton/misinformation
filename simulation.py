@@ -3,44 +3,45 @@ import random
 import matplotlib.pyplot as plt
 
 def create_social_network(num_nodes):
+    """Create social network graph."""
     G = nx.DiGraph()
-    # Assign types to each node and initialize properties
+    # user type and repost probability
     for i in range(num_nodes):
         user_type = random.choice(['common', 'celebrity', 'robot'])
         if user_type == 'celebrity':
-            repost_probability = 0.50
+            repost_probability = 0.15
         elif user_type == 'common':
-            repost_probability = 0.25
+            repost_probability = 0.05
         else:
-            repost_probability = 0.10
+            repost_probability = 0.01
         G.add_node(i, followers=[], followings=[], type=user_type, repost_probability=repost_probability)
 
-    # Set up followings and followers according to the new rules
+    # set connections
     for i in G.nodes():
         user_data = G.nodes[i]
         if user_data['type'] == 'celebrity':
-            # Celebrities followed by at least 40% of the users
-            num_followers = max(int(0.40 * num_nodes), 1)
+            # celebrities followed by at least 20% and at most 30% of the users
+            num_followers = min(int(random.uniform(0.2, 0.3) * num_nodes), 1)
             followers = random.sample(list(G.nodes), num_followers)
-            # Celebrities follow at most 5% of the users
-            num_followings = min(int(0.05 * num_nodes), num_nodes - 1)
+            # celebrities follow at most min(5%, 10) of the users
+            num_followings = min(int(random.uniform(0, 0.05) * num_nodes), 10)
             followings = random.sample([n for n in G.nodes if n != i], num_followings)
         else:
-            # Common users and robots followed by at most 10% of users
-            num_followers = min(int(0.10 * num_nodes), num_nodes - 1)
+            # common users and robots followed by at most min(10%, 100)of users 
+            num_followers = min(int(random.uniform(0, 0.1) * num_nodes), 50)
             followers = random.sample(list(G.nodes), num_followers)
-            # No specific constraint on how many these users can follow
-            num_followings = random.randint(0, num_nodes - 1)
+            # follow at most min(20%, 50) of the users
+            num_followings = min(int(random.uniform(0, 0.2) * num_nodes), 50)
             followings = random.sample([n for n in G.nodes if n != i], num_followings)
 
-        # Update graph with followings and followers
+        # update the directed graph with followings and followers
         for follower in followers:
-            if i != follower:  # Avoid self-following
+            if i != follower:  # avoid self-following
                 G.add_edge(follower, i)
                 G.nodes[i]['followers'].append(follower)
         
         for following in followings:
-            if i != following:  # Avoid self-following
+            if i != following: 
                 G.add_edge(i, following)
                 G.nodes[following]['followers'].append(i)
 
@@ -70,7 +71,8 @@ def visualize_message_spread(message_tree):
     plt.savefig("Message_Traversal_Tree")
 
 if __name__ == "__main__":
-    num_users = 50
+    random.seed(42)
+    num_users = 500
     G = create_social_network(num_users)
     message_tree = simulate_message_post(G)
     visualize_message_spread(message_tree)
