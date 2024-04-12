@@ -75,9 +75,29 @@ def visualize_message_spread(message_tree):
     plt.title("Message Spread Visualization as a Tree")
     plt.savefig("Message_Traversal_Tree")
 
+def save_paths_to_file(message_tree, filename="message_paths.txt"):
+    """Save all paths from the root to leaf nodes in the message_tree to a file."""
+    root = [n for n, d in message_tree.in_degree() if d==0]  # find the root node
+    if not root:
+        print("No root found in the tree.")
+        return
+    root = root[0]
+
+    with open(filename, 'w') as file:
+        for target in message_tree.nodes():
+            if target == root:
+                continue  # Skip the root itself
+            all_paths = list(nx.all_simple_paths(message_tree, source=root, target=target))
+            for path in all_paths:
+                path_str = " -> ".join(map(str, path))
+                file.write(path_str + '\n')
+
+    print(f"All paths have been saved to {filename}.")
+
 if __name__ == "__main__":
     random.seed(42)
     num_users = 430
     G = create_social_network(num_users)
     message_tree = simulate_message_post(G)
     visualize_message_spread(message_tree)
+    save_paths_to_file(message_tree)
