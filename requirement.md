@@ -33,7 +33,7 @@ There are 4 types of action we can take to intervene with the misinformation:
 note: action should be attribute of the poster
 
 Their corresponding cost: (exponentially increasing)
-$0, e, e^2, e^3$
+$0, 10, 10^2, 10^3$
 
 ## 7. RL training input
 experience tuple:
