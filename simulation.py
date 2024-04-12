@@ -6,9 +6,16 @@ import matplotlib.patches as mpatches
 def create_social_network(num_nodes):
     """Create social network graph."""
     G = nx.DiGraph()
-    # user type and repost probability
+    # at most min(10%, 200) celebrities
+    num_celebrities = min(int(0.01 * num_nodes), 100) 
+    # at most min(20%, 400) robots
+    num_robots = min(int(0.05 * num_nodes), 500)       
+    num_common = num_nodes - num_celebrities - num_robots
+    types = ['celebrity'] * num_celebrities + ['robot'] * num_robots + ['common'] * num_common
+    random.shuffle(types) 
+    # assign user type and repost probability
     for i in range(num_nodes):
-        user_type = random.choice(['common', 'celebrity', 'robot'])
+        user_type = types[i]
         if user_type == 'celebrity':
             repost_probability = 0.15
         elif user_type == 'common':

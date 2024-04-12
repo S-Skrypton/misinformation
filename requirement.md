@@ -4,14 +4,14 @@
 For each node, it represents a user and it has several features:
 1. followers list
 2. following list
-3. type (there are 3 types of users in this network: regular people, robot, celebrity)
-4. repost probability: when this user posts a new post, the probability that this post will be reposted by his followers. regular: 5%; robot: 5%; celebrity: 10%
+3. type (there are 3 types of users in this network: common people, robot, celebrity)
+4. repost probability: when this user posts a new post, the probability that this post will be reposted by his followers. common: 5%; robot: 1%; celebrity: 15%
 
 ## 2. Graph
 We randomly pick a node as a starting point (root of the tree). The resulting graph will be a tree structure.
 
 ## 3. Simulation Process
-We first randomly generate 100 nodes, assign them as 3 types of people. Let's say each celebrity has at least 40% of the total network number of followers, each regular user has no more than 10% followers, each robot has no more than 10% followers. For the followings, robot and regular people cannot exceed 20% of the network. The following of a celebrity cannot exceed 5% of the network. For the whole population, 10% of the network is celebrity, 10% is robot, and the rest are regular people. The network is static when the misinformation spreads.
+We first randomly generate 430 nodes, assign them as 3 types of people. Let's say each celebrity has at least 20% and at most 30% of the total network number of followers, each common user has no more than 10% ( or 100 if the network is very big) followers, each robot has no more than 10% ( or 100 if the network is very big) followers. For the followings, robot and common people cannot exceed 20% ( or 50 if the net work is very big) of the network. The following of a celebrity cannot exceed 5% (or 10 if the network is very big) of the network. For the whole population, 10% of the network is celebrity (100 if the network is very big), 10% is robot, and the rest are common people. The network is static when the misinformation spreads.
 
 We randomly pick a node as a starting point, post an information and starting to generate the spreading tree. The simulation stopped if the whole network is infected or it can no longer be further reposted.
 
