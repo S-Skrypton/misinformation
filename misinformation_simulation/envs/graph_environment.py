@@ -53,7 +53,24 @@ def apply_action(node_id, action, G):
         # Ban all in chain - requires identifying the chain first
         pass
 
+# Cost functions
+def cost_of_action(action):
+    """Returns the cost of an action, exponentially increasing."""
+    return 2 ** action
+
+def cost_of_node_type(node_type):
+    """Returns the cost associated with the node's type."""
+    if node_type == 'celebrity':
+        return 10
+    elif node_type == 'common':
+        return 5
+    elif node_type == 'robot':
+        return 1
+    return 0
+
 def compute_reward(node_id, action, G):
-    """ Computes the reward after an action """
-    # Define and compute the reward based on action specifics
+    """Computes the reward after an action."""
+    action_cost = cost_of_action(action)
+    node_type_cost = cost_of_node_type(G.nodes[node_id]['type'])
+    reward = -(action_cost + node_type_cost)
     return reward

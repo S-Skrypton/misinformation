@@ -32,6 +32,3 @@ def simulate_message_post(G):
                 queue.append((follower, level+1))
 
     return message_tree
-
-if __name__ == "__main__":
-    run_simulation(500)
