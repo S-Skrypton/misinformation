@@ -132,3 +132,7 @@ class DQN:
         # Decay epsilon
         if self.eps >= 0.01:
             self.eps *= 0.95
+            
+    def target_update(self):
+        # Update the target Q network (self.dqn_target) using the original Q network (self.dqn)
+        self.dqn_target.load_state_dict(self.dqn.state_dict())
