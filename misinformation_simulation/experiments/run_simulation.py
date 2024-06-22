@@ -28,10 +28,13 @@ def run_simulation(num_users, iteration):
     save_paths_to_file(message_tree, iteration)
 
     # agent = DQN(seed=0)
+    # fill replay buffer to agent
+    # agent.fill_replay_buffer(G)
 
     # # Variables for tracking rewards
     # max_reward = 0
     # reward_queue = deque(maxlen=100)
+
 
     # Training loop
     # for i in range(2000):
