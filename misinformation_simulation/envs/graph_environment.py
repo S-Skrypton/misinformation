@@ -76,12 +76,16 @@ def cost_of_node_type(node_type):
         return 1
     return 0
 
-def compute_reward(node_id, action, G):
-    """Computes the reward after an action."""
+def compute_reward(current_node, next_node, action, G):
+    """Computes the reward after an action based on current and next node."""
     action_cost = cost_of_action(action)
-    node_type_cost = cost_of_node_type(G.nodes[node_id]['type'])
-    reward = -(action_cost + node_type_cost)
+    current_node_type_cost = cost_of_node_type(G.nodes[current_node]['type'])
+    next_node_type_cost = cost_of_node_type(G.nodes[next_node]['type'])
+
+    # Assuming you want to incorporate the type cost of both nodes
+    reward = -(action_cost + current_node_type_cost + next_node_type_cost)
     return reward
+
 
 
 # DONE 
