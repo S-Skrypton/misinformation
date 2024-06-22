@@ -15,9 +15,9 @@ def run_simulation(num_users):
     message_tree = simulate_message_post(G)  # You need to define or move this function appropriately
     visualize_message_spread(message_tree, G)
     save_paths_to_file(message_tree)
-
     agent = DQN(seed=0)
-
+    # fill replay buffer to agent
+    agent.fill_replay_buffer(G)
     # Variables for tracking rewards
     max_reward = 0
     reward_queue = deque(maxlen=100)

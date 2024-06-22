@@ -31,6 +31,24 @@ class QNetwork(nn.Module):
         x = self.linear2(x)
         return x
 
+
+class ReplayBuffer:
+    def __init__(self, max_size):
+        self.buffer = deque(maxlen=max_size)
+
+    def add(self, state, action, reward, next_state, done):
+        self.buffer.append((state, action, reward, next_state, done))
+
+    def sample(self, batch_size):
+        indices = np.random.choice(len(self.buffer), batch_size, replace=False)
+        batch = [self.buffer[idx] for idx in indices]
+        states, actions, rewards, next_states, dones = zip(*batch)
+        return np.array(states), np.array(actions), np.array(rewards), np.array(next_states), np.array(dones)
+
+    def __len__(self):
+        return len(self.buffer)
+
+
 class DQN:
     def __init__(self, seed=None):
         self.dqn = QNetwork(4, 4, 128)  # Q network
@@ -42,7 +60,7 @@ class DQN:
         self.eps = 1.0  # epsilon-greedy for exploration
         self.loss_fn = torch.nn.MSELoss()  # loss function
         self.optim = torch.optim.Adam(self.dqn.parameters(), lr=0.001)  # optimizer for training
-        self.replay_memory_buffer = deque(maxlen=10000)  # replay buffer
+        self.replay_memory_buffer = ReplayBuffer(maxlen=10000)  # replay buffer
         if seed is None:
             self.rng = np.random.default_rng()
         else:
@@ -118,6 +136,14 @@ class DQN:
         """
         self.replay_memory_buffer.append((state, action, reward, next_state, done))
 
+    #fill the replay buffer with graph edges
+    def fill_replay_buffer(self, G):
+        for state in G:
+            for next_state, reward in G[state]:
+                action = (state, next_state)  # In this case, the action is the edge itself
+                done = next_state not in G or len(G[next_state]) == 0  # Terminal if no outgoing edges
+                self.replay_memory_buffer.add(state, action, reward, next_state, done)
+    
     def get_random_sample_from_replay_mem(self):
         """
         Random samples from replay memory without replacement
@@ -137,3 +163,4 @@ class DQN:
     def target_update(self):
         # Update the target Q network (self.dqn_target) using the original Q network (self.dqn)
         self.dqn_target.load_state_dict(self.dqn.state_dict())
+
