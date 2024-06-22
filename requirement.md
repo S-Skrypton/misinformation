@@ -36,7 +36,7 @@ Their corresponding cost: (exponentially increasing)
 $0, 10, 10^2, 10^3$
 
 ## 7. RL training input
-experience tuple:
+experience tuple: add one dimension of the state s (how many infected nodes)
 \[
 (s, a, r, s')
 \]

@@ -56,20 +56,20 @@ class DQN:
         Returns:
             action: action index, 0 to 3
         """
-        if self.rng.uniform() < self.eps:  # Exploration
-            action = self.rng.choice(self.output_dim)
-        else:  # Exploitation
-            self.dqn.eval()  # Switch to evaluation mode
-            with torch.no_grad():
-                state = torch.from_numpy(state).float().unsqueeze(0)
-                scores = self.dqn(state)
-            self.dqn.train()  # Switch back to training mode
-            _, argmax = torch.max(scores.data, 1)
-            action = int(argmax.numpy())
+        # if self.rng.uniform() < self.eps:  # Exploration
+        #     action = self.rng.choice(self.output_dim)
+        # else:  # Exploitation
+        self.dqn.eval()  # Switch to evaluation mode
+        with torch.no_grad():
+            state = torch.from_numpy(state).float().unsqueeze(0)
+            scores = self.dqn(state)
+        self.dqn.train()  # Switch back to training mode
+        _, argmax = torch.max(scores.data, 1)
+        action = int(argmax.numpy())
         
         return action
 
-    def train(self, s0, a0, r, s1, done):
+    def train(self, times):
         """
         Train the Q network
         Args:
@@ -78,11 +78,12 @@ class DQN:
             r: reward
             s1: next state, a numpy array with size 4
             done: done=True means that the episode terminates and done=False means that the episode does not terminate.
+            !!!!! either cannot repost or all the nodes are infected
         """
-        self.add_to_replay_memory(s0, a0, r, s1, done)
+        # self.add_to_replay_memory(s0, a0, r, s1, done)  #!!! no need to call this function
         
-        if done:
-            self.update_epsilon()
+        if times % 500 == 0:
+            self.update_epsilon() # !!! needs modification, after several trajectories, make it slowly every 500 times
             self.target_update()
             
         if len(self.replay_memory_buffer) < self.batch_size:
@@ -131,7 +132,7 @@ class DQN:
     def update_epsilon(self):
         # Decay epsilon
         if self.eps >= 0.01:
-            self.eps *= 0.95
+            self.eps *= 0.95  # change it larger
             
     def target_update(self):
         # Update the target Q network (self.dqn_target) using the original Q network (self.dqn)
