@@ -41,18 +41,25 @@ def get_state(node_id, G):
 # apply action function
 def apply_action(node_id, action, G):
     """ Applies a given action to a node """
+    node_data = G.nodes[node_id]
+    # if action == 1:
+    #     # Block 5 posts
+    #     G.nodes[node_id]['blocked_posts'] = 5
     if action == 1:
-        # Block 5 posts
-        G.nodes[node_id]['blocked_posts'] = 5
-    elif action == 2:
         # Do nothing
         pass
-    elif action == 3:
+    elif action == 2:
         # Label and reduce probability
         G.nodes[node_id]['repost_probability'] *= 0.3
-    elif action == 4:
+    elif action == 3:
         # Ban all in chain - requires identifying the chain first (don't let any reposts from this node go through)
-        pass
+        node_data['repost_probability'] *= 0.1
+        # stack = [node_id]
+        # while stack:
+        #     current_node = stack.pop()
+        #     G.nodes[current_node]['repost_probability'] = 0
+        #     followers = G.nodes[current_node]['followers']
+        #     stack.extend(followers)
 
 # Cost functions
 def cost_of_action(action):
