@@ -137,12 +137,6 @@ class DQN:
         self.replay_memory_buffer.append((state, action, reward, next_state, done))
 
     #fill the replay buffer with graph edges
-    def fill_replay_buffer(self, G):
-        for state in G:
-            for next_state, reward in G[state]:
-                action = (state, next_state)  # In this case, the action is the edge itself
-                done = next_state not in G or len(G[next_state]) == 0  # Terminal if no outgoing edges
-                self.replay_memory_buffer.add(state, action, reward, next_state, done)
     
     def get_random_sample_from_replay_mem(self):
         """

@@ -13,7 +13,7 @@ def create_social_network(num_nodes):
     for i in range(num_nodes):
         user_type = types[i]
         repost_probability = 0.15 if user_type == 2 else 0.03 if user_type == 0 else 0.01
-        G.add_node(i, followers=[], followings=[], type=user_type, repost_probability=repost_probability)
+        G.add_node(i, followers=[], followings=[], type=user_type, repost_probability=repost_probability, action = 1)
     for i in G.nodes():
         user_data = G.nodes[i]
         followers = random.sample(list(G.nodes), min(int(random.uniform(0.2, 0.3) * num_nodes), 1) if user_data['type'] == 2 else min(int(random.uniform(0, 0.1) * num_nodes), 50))
