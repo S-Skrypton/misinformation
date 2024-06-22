@@ -22,8 +22,9 @@ def run_simulation(num_users, iteration):
         print(f"Creating new graph for iteration {iteration}")
         G = create_social_network(num_users)
         save_graph_to_json(G, filename)  # Save the newly created graph to a JSON file
-    agent = DQN(seed=0)
-    message_tree = simulate_message_post(G, agent.replay_buffer)
+    #agent = DQN(seed=0)
+    message_tree = simulate_message_post(G)
+    #message_tree = simulate_message_post(G, agent.replay_memory_buffer)
     visualize_message_spread(message_tree, G, iteration)
     save_paths_to_file(message_tree, iteration)
     # # Variables for tracking rewards
@@ -78,7 +79,7 @@ def run_multiple_simulations(num_users, num_simulations):
     for i in range(1, num_simulations + 1):
         run_simulation(num_users, i)
 
-def simulate_message_post(G, replay_buffer): # !!! insert action function into this
+def simulate_message_post(G): # !!! insert action function into this
     """Simulate message traversal in the network."""
     while True:
         initial_poster = random.choice(list(G.nodes))
@@ -92,7 +93,7 @@ def simulate_message_post(G, replay_buffer): # !!! insert action function into t
     # Apply a random action to the initial poster
     action = random.randint(1, 2)  # Assume actions are numbered 1 to 3
     apply_action(initial_poster, action, G)
-    G.nodes[initial_poster].action = action
+    G.nodes[initial_poster]['action'] = action
 
     while queue:
         current_node, level = queue.pop(0)
@@ -106,15 +107,13 @@ def simulate_message_post(G, replay_buffer): # !!! insert action function into t
                 # Apply a random action to the follower
                 action = random.randint(1, 4)
                 apply_action(follower, action, G)
-                G.nodes[follower].action=action
+                G.nodes[follower]['action']=action
                 
-                state = get_state(current_node, G)
-                next_state = get_state(follower, G)
-                reward = compute_reward(current_node, follower, action, G)
-                done = len(G.nodes[follower]['followers']) == 0  # Adjust according to your terminal state logic
-                replay_buffer.add(state, action, reward, next_state, done)
-
-
+                # state = get_state(current_node, G)
+                # next_state = get_state(follower, G)
+                # reward = compute_reward(current_node, follower, action, G)
+                # done = len(G.nodes[follower]['followers']) == 0  # Adjust according to your terminal state logic
+                # replay_buffer.add(state, action, reward, next_state, done)
     return message_tree
 
 def save_graph_to_json(graph, filename):

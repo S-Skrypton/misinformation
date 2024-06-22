@@ -60,7 +60,7 @@ class DQN:
         self.eps = 1.0  # epsilon-greedy for exploration
         self.loss_fn = torch.nn.MSELoss()  # loss function
         self.optim = torch.optim.Adam(self.dqn.parameters(), lr=0.001)  # optimizer for training
-        self.replay_memory_buffer = ReplayBuffer(maxlen=10000)  # replay buffer
+        self.replay_memory_buffer = ReplayBuffer(10000)  # replay buffer
         if seed is None:
             self.rng = np.random.default_rng()
         else:
@@ -124,19 +124,17 @@ class DQN:
         loss.backward()
         self.optim.step()
 
-    def add_to_replay_memory(self, state, action, reward, next_state, done):
-        """
-        Add samples to replay memory
-        Args:
-            state: current state, a numpy array with size 4
-            action: current action, 0 to 3
-            reward: reward
-            next_state: next state, a numpy array with size 4
-            done: done=True means that the episode terminates and done=False means that the episode does not terminate.
-        """
-        self.replay_memory_buffer.append((state, action, reward, next_state, done))
-
-    #fill the replay buffer with graph edges
+    # def add_to_replay_memory(self, state, action, reward, next_state, done):
+    #     """
+    #     Add samples to replay memory
+    #     Args:
+    #         state: current state, a numpy array with size 4
+    #         action: current action, 0 to 3
+    #         reward: reward
+    #         next_state: next state, a numpy array with size 4
+    #         done: done=True means that the episode terminates and done=False means that the episode does not terminate.
+    #     """
+    #     self.replay_memory_buffer.append((state, action, reward, next_state, done))
     
     def get_random_sample_from_replay_mem(self):
         """
