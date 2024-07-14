@@ -1,5 +1,5 @@
 from envs.graph_environment import create_social_network, get_state, apply_action, compute_reward
-from utils.helpers import visualize_message_spread, save_paths_to_file
+from utils.helpers import visualize_message_spread, save_paths_to_file, save_replay_buffer_to_file
 from agents.dqn_agent import DQN
 import random
 import numpy as np
@@ -15,23 +15,24 @@ def run_simulation(num_users, iteration):
     filename = f"network_simulation_{iteration}.json"
     
     # Check if the graph already exists
-    if os.path.exists(filename):
-        print(f"Loading existing graph for iteration {iteration}")
-        G = load_graph_from_json(filename)
-    else:
-        print(f"Creating new graph for iteration {iteration}")
-        G = create_social_network(num_users)
-        save_graph_to_json(G, filename)  # Save the newly created graph to a JSON file
+    print(f"Creating new graph for iteration {iteration}")
+    G = create_social_network(num_users)
+    save_graph_to_json(G, filename)  # Save the newly created graph to a JSON file
     agent = DQN(seed=0)
-    message_tree = simulate_message_post(G, agent.replay_buffer)
+    # message_tree = simulate_message_post(G)
+    message_tree = simulate_message_post(G, agent.replay_memory_buffer)
     visualize_message_spread(message_tree, G, iteration)
+    save_replay_buffer_to_file(agent.replay_memory_buffer,"replay_buffer.txt")
     save_paths_to_file(message_tree, iteration)
     # # Variables for tracking rewards
-    # max_reward = 0
-    # reward_queue = deque(maxlen=100)
+    max_reward = 0
+    reward_queue = deque(maxlen=100)
 
 
     # Training loop
+    for i in range(10):
+        agent.train(1)
+        print(i)
     # for i in range(2000):
     #     node_id = random.choice(list(G.nodes))
     #     state = get_state(node_id, G)
@@ -39,10 +40,10 @@ def run_simulation(num_users, iteration):
     #     episodic_reward = 0
         
     #     while not done:
-    #         action = agent.select_action(np.array(state))
-    #         apply_action(node_id, action, G)
-    #         reward = compute_reward(node_id, action, G)
-    #         next_state = get_state(node_id, G)
+    #         # action = agent.select_action(np.array(state))
+    #         # apply_action(node_id, action, G)
+    #         # reward = compute_reward(node_id, action, G)
+    #         # next_state = get_state(node_id, G)
             
     #         # Define your own termination condition
     #         done = False
@@ -92,7 +93,7 @@ def simulate_message_post(G, replay_buffer): # !!! insert action function into t
     # Apply a random action to the initial poster
     action = random.randint(1, 2)  # Assume actions are numbered 1 to 3
     apply_action(initial_poster, action, G)
-    G.nodes[initial_poster].action = action
+    G.nodes[initial_poster]['action'] = action
 
     while queue:
         current_node, level = queue.pop(0)
@@ -104,17 +105,15 @@ def simulate_message_post(G, replay_buffer): # !!! insert action function into t
                 message_tree.add_edge(current_node, follower)
                 queue.append((follower, level+1))
                 # Apply a random action to the follower
-                action = random.randint(1, 4)
+                action = random.randint(0, 3)
                 apply_action(follower, action, G)
-                G.nodes[follower].action=action
+                G.nodes[follower]['action']=action
                 
                 state = get_state(current_node, G)
                 next_state = get_state(follower, G)
                 reward = compute_reward(current_node, follower, action, G)
                 done = len(G.nodes[follower]['followers']) == 0  # Adjust according to your terminal state logic
                 replay_buffer.add(state, action, reward, next_state, done)
-
-
     return message_tree
 
 def save_graph_to_json(graph, filename):
@@ -122,8 +121,8 @@ def save_graph_to_json(graph, filename):
     with open(filename, 'w') as f:
         json.dump(data, f)
 
-def load_graph_from_json(filename):
-    with open(filename, 'r') as f:
-        data = json.load(f)
-    return nx.node_link_graph(data)  # create a NetworkX graph from node-link data
+# def load_graph_from_json(filename):
+#     with open(filename, 'r') as f:
+#         data = json.load(f)
+#     return nx.node_link_graph(data)  # create a NetworkX graph from node-link data
 

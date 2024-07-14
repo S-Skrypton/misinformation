@@ -32,3 +32,10 @@ def save_paths_to_file(message_tree, iteration):
                 for path in all_paths:
                     file.write(" -> ".join(map(str, path)) + '\n')
     print(f"All paths have been saved to {filename}.")
+
+
+def save_replay_buffer_to_file(replay_buffer, filename):
+    with open(filename, 'w') as f:
+        for transition in replay_buffer.buffer:
+            state, action, reward, next_state, done = transition
+            f.write(f"State: {state}, Action: {action}, Reward: {reward}, Next State: {next_state}, Done: {done}\n")
