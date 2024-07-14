@@ -51,8 +51,8 @@ class ReplayBuffer:
 
 class DQN:
     def __init__(self, seed=None):
-        self.dqn = QNetwork(4, 4, 128)  # Q network
-        self.dqn_target = QNetwork(4, 4, 128)  # Target Q network
+        self.dqn = QNetwork(3, 4, 128)  # Q network
+        self.dqn_target = QNetwork(3, 4, 128)  # Target Q network
         self.dqn_target.load_state_dict(self.dqn.state_dict())
         self.batch_size = 64  # Batch size
         self.output_dim = 4  # Output dimension of Q network, i.e., the number of possible actions
@@ -104,7 +104,7 @@ class DQN:
             self.update_epsilon() # !!! needs modification, after several trajectories, make it slowly every 500 times
             self.target_update()
             
-        if len(self.replay_memory_buffer) < self.batch_size:
+        if len(self.replay_memory_buffer.buffer) < self.batch_size:
             return
         
         mini_batch = self.get_random_sample_from_replay_mem()
@@ -134,7 +134,7 @@ class DQN:
     #         next_state: next state, a numpy array with size 4
     #         done: done=True means that the episode terminates and done=False means that the episode does not terminate.
     #     """
-    #     self.replay_memory_buffer.append((state, action, reward, next_state, done))
+    #     self.replay_memory_buffer.buffer.append((state, action, reward, next_state, done))
     
     def get_random_sample_from_replay_mem(self):
         """
@@ -144,7 +144,7 @@ class DQN:
             random_sample: a list with len=self.batch_size,
                            where each element is a tuple (state, action, reward, next_state, done)
         """
-        random_sample = random.sample(self.replay_memory_buffer, self.batch_size)
+        random_sample = random.sample(self.replay_memory_buffer.buffer, self.batch_size)
         return random_sample
     
     def update_epsilon(self):

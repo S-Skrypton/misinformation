@@ -1,6 +1,6 @@
 env/
 *.png
 __pycache__/
-message_paths.txt
+message_paths*.txt
 assignment*
 requirements.txt
