@@ -1,6 +1,0 @@
-State: [0, 0.035833333333333335, 0.0], Action: 1, Reward: -12, Next State: [0, 0.050833333333333335, 0.0], Done: False
-State: [0, 0.035833333333333335, 0.0], Action: 3, Reward: -18, Next State: [0, 0.08833333333333333, 0.0], Done: False
-State: [0, 0.050833333333333335, 0.0], Action: 2, Reward: -14, Next State: [0, 0.07916666666666666, 0.0], Done: False
-State: [0, 0.050833333333333335, 0.0], Action: 0, Reward: -11, Next State: [0, 0.0575, 0.0], Done: False
-State: [0, 0.050833333333333335, 0.0], Action: 3, Reward: -18, Next State: [0, 0.06666666666666667, 0.0], Done: False
-State: [0, 0.0575, 0.0], Action: 2, Reward: -14, Next State: [0, 0.08166666666666667, 0.0], Done: False

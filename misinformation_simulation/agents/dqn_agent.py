@@ -39,12 +39,6 @@ class ReplayBuffer:
     def add(self, state, action, reward, next_state, done):
         self.buffer.append((state, action, reward, next_state, done))
 
-    def sample(self, batch_size):
-        indices = np.random.choice(len(self.buffer), batch_size, replace=False)
-        batch = [self.buffer[idx] for idx in indices]
-        states, actions, rewards, next_states, dones = zip(*batch)
-        return np.array(states), np.array(actions), np.array(rewards), np.array(next_states), np.array(dones)
-
     def __len__(self):
         return len(self.buffer)
 
@@ -72,7 +66,7 @@ class DQN:
         Args:
             state: a numpy array with size 4
         Returns:
-            action: action index, 0 to 3
+            action: action index, 1 to 3
         """
         # if self.rng.uniform() < self.eps:  # Exploration
         #     action = self.rng.choice(self.output_dim)
@@ -86,7 +80,7 @@ class DQN:
             scores = self.dqn(state)
         self.dqn.train()  # Switch back to training mode
         _, argmax = torch.max(scores.data, 1)
-        action = int(argmax.numpy())
+        action = int(argmax.item()) + 1  # Add 1 to shift index to 1-based
         
         return action
 
@@ -95,7 +89,7 @@ class DQN:
         Train the Q network
         Args:
             s0: current state, a numpy array with size 4
-            a0: current action, 0 to 3
+            a0: current action, 1 to 3
             r: reward
             s1: next state, a numpy array with size 4
             done: done=True means that the episode terminates and done=False means that the episode does not terminate.
@@ -126,18 +120,6 @@ class DQN:
         self.optim.zero_grad()
         loss.backward()
         self.optim.step()
-
-    # def add_to_replay_memory(self, state, action, reward, next_state, done):
-    #     """
-    #     Add samples to replay memory
-    #     Args:
-    #         state: current state, a numpy array with size 4
-    #         action: current action, 0 to 3
-    #         reward: reward
-    #         next_state: next state, a numpy array with size 4
-    #         done: done=True means that the episode terminates and done=False means that the episode does not terminate.
-    #     """
-    #     self.replay_memory_buffer.buffer.append((state, action, reward, next_state, done))
     
     def get_random_sample_from_replay_mem(self):
         """

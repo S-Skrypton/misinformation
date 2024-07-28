@@ -1,2 +1,0 @@
-State: [0, 0.07333333333333333, 0.0], Action: 3, Reward: -23, Next State: [2, 0.043333333333333335, 0.0], Done: False
-State: [2, 0.043333333333333335, 0.0], Action: 3, Reward: -23, Next State: [0, 0.04583333333333333, 0.0], Done: False

@@ -10,75 +10,29 @@ import json
 import os
 
 
-def run_simulation(num_users, iteration):
-    
-    filename = f"network_simulation_{iteration}.json"
-    
+def run_simulation(num_users, iteration):   
     # Check if the graph already exists
     print(f"Creating new graph for iteration {iteration}")
     G = create_social_network(num_users)
-    save_graph_to_json(G, filename)  # Save the newly created graph to a JSON file
     agent = DQN(seed=0)
     # message_tree = simulate_message_post(G)
-    message_tree = simulate_message_post(G, agent.replay_memory_buffer)
+    initial_reward, message_tree = simulate_message_post(G, agent.replay_memory_buffer)
     visualize_message_spread(message_tree, G, iteration)
     save_replay_buffer_to_file(agent.replay_memory_buffer,f"replay_buffer_{iteration}.txt")
     save_paths_to_file(message_tree, iteration)
-    # # Variables for tracking rewards
-    max_reward = 0
-    reward_queue = deque(maxlen=100)
-
-
+    initial_poster=[n for n, d in message_tree.in_degree() if d==0][0] if [n for n, d in message_tree.in_degree() if d==0] else None
+    rewards_queue = []
+    # rewards_queue.append(initial_reward)
     # Training loop
     for i in range(2000):  # Assuming 2000 total training iterations
-        agent.train(i)  # Regular training update
-
+        agent.train(1)
+        if (i + 1) % 10 == 0:
+            reward = simulate_spread(G, agent, initial_poster)
+            rewards_queue.append(reward)
+            print(reward)
         if (i + 1) % 100 == 0:  # Evaluate every 100 iterations
-            average_reward = averaged_simulate_spread(G, agent)
-            print(f"Evaluation after {i + 1} iterations: Average Total Reward = {average_reward}")
-
-
-    # for i in range(2000):
-    #     node_id = random.choice(list(G.nodes))
-    #     state = get_state(node_id, G)
-    #     done = False
-    #     episodic_reward = 0
-        
-    #     while not done:
-    #         # action = agent.select_action(np.array(state))
-    #         # apply_action(node_id, action, G)
-    #         # reward = compute_reward(node_id, action, G)
-    #         # next_state = get_state(node_id, G)
-            
-    #         # Define your own termination condition
-    #         done = False
-            
-    #         episodic_reward += reward
-    #         agent.train(np.array(state), action, reward, np.array(next_state), done)
-    #         state = next_state
-        
-    #     reward_queue.append(episodic_reward)
-        
-    #     if (i + 1) % 10 == 0:
-    #         print(f'Training episode {i + 1}, reward: {episodic_reward}', end='')
-        
-    #     if len(reward_queue) == 100:
-    #         avg_reward = sum(reward_queue) / 100
-    #         if (i + 1) % 10 == 0:
-    #             print(f', moving average reward: {avg_reward}')
-            
-    #         if avg_reward > max_reward:
-    #             max_reward = avg_reward
-            
-    #         if avg_reward >= -195:  # Adjust the threshold, first need to compute the baseline
-    #             print(f"Problem solved in {i + 1} episodes")
-    #             break
-    #     else:
-    #         if (i + 1) % 10 == 0:
-    #             print('')
-
-    # print(f'Average reward over 100 episodes: {max_reward}')
-
+            average_reward = np.mean(rewards_queue)
+            print(f"Evaluation after {i + 1} iterations: running average is = {average_reward}")
 
 def run_multiple_simulations(num_users, num_simulations):
     random.seed(598)
@@ -95,10 +49,10 @@ def simulate_message_post(G, replay_buffer): # !!! insert action function into t
     message_tree = nx.DiGraph()
     queue = [(initial_poster, 0)]
     message_tree.add_node(initial_poster, level=0)
-
     # Apply a random action to the initial poster
     action = random.randint(1, 2)  # Assume actions are numbered 1 to 3
     apply_action(initial_poster, action, G)
+    initial_reward = compute_reward(initial_poster, None, action, G)
     G.nodes[initial_poster]['action'] = action
 
     while queue:
@@ -111,20 +65,21 @@ def simulate_message_post(G, replay_buffer): # !!! insert action function into t
                 message_tree.add_edge(current_node, follower)
                 queue.append((follower, level+1))
                 # Apply a random action to the follower
-                action = random.randint(0, 3)
+                action = random.randint(1, 3)
                 apply_action(follower, action, G)
                 G.nodes[follower]['action']=action
                 
                 state = get_state(current_node, G)
                 next_state = get_state(follower, G)
                 reward = compute_reward(current_node, follower, action, G)
+                initial_reward += reward
                 done = len(G.nodes[follower]['followers']) == 0  # Adjust according to your terminal state logic
                 replay_buffer.add(state, action, reward, next_state, done)
-    return message_tree
+    print(f"initial_reward is {initial_reward}")
+    return initial_reward, message_tree
 
-def simulate_spread(G, agent):
+def simulate_spread(G, agent, initial_poster):
     """Simulate message traversal in the network using the agent's policy, strictly for evaluation."""
-    initial_poster = random.choice([n for n in G.nodes if G.nodes[n]['followers']])
     message_tree = nx.DiGraph()
     queue = [(initial_poster, 0)]
     message_tree.add_node(initial_poster, level=0)
@@ -134,8 +89,7 @@ def simulate_spread(G, agent):
     action = agent.select_action(state)
     apply_action(initial_poster, action, G)  # Apply the selected action to modify the graph state
     G.nodes[initial_poster]['action'] = action
-
-    total_reward = 0  # To accumulate the total reward
+    total_reward = compute_reward(initial_poster, None, action, G)
 
     while queue:
         current_node, level = queue.pop(0)
@@ -155,28 +109,7 @@ def simulate_spread(G, agent):
 
                 # Get reward for the action
                 reward = compute_reward(current_node, follower, follower_action, G)
-                total_reward += reward  # Update total reward
+                total_reward += reward 
 
-    return total_reward, message_tree
-
-def averaged_simulate_spread(G, agent, num_trials=15):
-    """Run multiple simulations and average the results for robust evaluation."""
-    total_rewards = []
-    for _ in range(num_trials):
-        reward, _ = simulate_spread(G, agent)
-        total_rewards.append(reward)
-    
-    average_reward = sum(total_rewards) / num_trials
-    return average_reward
-
-
-def save_graph_to_json(graph, filename):
-    data = nx.node_link_data(graph)  # convert graph to node-link format which is suitable for JSON
-    with open(filename, 'w') as f:
-        json.dump(data, f)
-
-# def load_graph_from_json(filename):
-#     with open(filename, 'r') as f:
-#         data = json.load(f)
-#     return nx.node_link_graph(data)  # create a NetworkX graph from node-link data
+    return total_reward
 
