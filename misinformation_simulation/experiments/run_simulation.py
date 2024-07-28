@@ -34,10 +34,8 @@ def run_simulation(num_users, iteration):
         agent.train(i)  # Regular training update
 
         if (i + 1) % 100 == 0:  # Evaluate every 100 iterations
-            reward, tree = simulate_spread(G, agent)  # Use the current graph G for evaluation
-            print(f"Evaluation after {i + 1} iterations: Total Reward = {reward}")
-
-            
+            average_reward = averaged_simulate_spread(G, agent)
+            print(f"Evaluation after {i + 1} iterations: Average Total Reward = {average_reward}")
 
 
     # for i in range(2000):
@@ -160,6 +158,16 @@ def simulate_spread(G, agent):
                 total_reward += reward  # Update total reward
 
     return total_reward, message_tree
+
+def averaged_simulate_spread(G, agent, num_trials=15):
+    """Run multiple simulations and average the results for robust evaluation."""
+    total_rewards = []
+    for _ in range(num_trials):
+        reward, _ = simulate_spread(G, agent)
+        total_rewards.append(reward)
+    
+    average_reward = sum(total_rewards) / num_trials
+    return average_reward
 
 
 def save_graph_to_json(graph, filename):
