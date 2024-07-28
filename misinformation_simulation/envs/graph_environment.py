@@ -45,15 +45,15 @@ def apply_action(node_id, action, G):
     # if action == 1:
     #     # Block 5 posts
     #     G.nodes[node_id]['blocked_posts'] = 5
-    if action == 1:
+    if action == 0:
         # Do nothing
         pass
-    elif action == 2:
+    elif action == 1:
         # Label and reduce probability
-        G.nodes[node_id]['repost_probability'] *= 0.3
-    elif action == 3:
+        G.nodes[node_id]['repost_probability'] *= 0.95
+    elif action == 2:
         # Ban all in chain - requires identifying the chain first (don't let any reposts from this node go through)
-        node_data['repost_probability'] *= 0.1
+        node_data['repost_probability'] *= 0.5
         # stack = [node_id]
         # while stack:
         #     current_node = stack.pop()
@@ -66,7 +66,7 @@ def apply_action(node_id, action, G):
 # Cost functions
 def cost_of_action(action):
     """Returns the cost of an action, exponentially increasing."""
-    return 10 ** action
+    return 10 ** (2*action)
 
 def cost_of_node_type(node_type):
     """Returns the cost associated with the node's type."""

@@ -29,7 +29,6 @@ def run_simulation(num_users, iteration):
         if (i + 1) % 10 == 0:
             reward = simulate_spread(G, agent, initial_poster)
             rewards_queue.append(reward)
-            print(reward)
         if (i + 1) % 100 == 0:  # Evaluate every 100 iterations
             average_reward = np.mean(rewards_queue)
             print(f"Evaluation after {i + 1} iterations: running average is = {average_reward}")
@@ -50,7 +49,7 @@ def simulate_message_post(G, replay_buffer): # !!! insert action function into t
     queue = [(initial_poster, 0)]
     message_tree.add_node(initial_poster, level=0)
     # Apply a random action to the initial poster
-    action = random.randint(1, 2)  # Assume actions are numbered 1 to 3
+    action = random.randint(0,1)  # Assume actions are numbered 1 to 3
     apply_action(initial_poster, action, G)
     initial_reward = compute_reward(initial_poster, None, action, G)
     G.nodes[initial_poster]['action'] = action
@@ -65,7 +64,7 @@ def simulate_message_post(G, replay_buffer): # !!! insert action function into t
                 message_tree.add_edge(current_node, follower)
                 queue.append((follower, level+1))
                 # Apply a random action to the follower
-                action = random.randint(1, 3)
+                action = random.randint(0, 2)
                 apply_action(follower, action, G)
                 G.nodes[follower]['action']=action
                 
