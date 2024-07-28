@@ -39,23 +39,17 @@ class ReplayBuffer:
     def add(self, state, action, reward, next_state, done):
         self.buffer.append((state, action, reward, next_state, done))
 
-    def sample(self, batch_size):
-        indices = np.random.choice(len(self.buffer), batch_size, replace=False)
-        batch = [self.buffer[idx] for idx in indices]
-        states, actions, rewards, next_states, dones = zip(*batch)
-        return np.array(states), np.array(actions), np.array(rewards), np.array(next_states), np.array(dones)
-
     def __len__(self):
         return len(self.buffer)
 
 
 class DQN:
     def __init__(self, seed=None):
-        self.dqn = QNetwork(3, 4, 128)  # Q network
-        self.dqn_target = QNetwork(3, 4, 128)  # Target Q network
+        self.dqn = QNetwork(3, 3, 128)  # Q network
+        self.dqn_target = QNetwork(3, 3, 128)  # Target Q network
         self.dqn_target.load_state_dict(self.dqn.state_dict())
         self.batch_size = 64  # Batch size
-        self.output_dim = 4  # Output dimension of Q network, i.e., the number of possible actions
+        self.output_dim = 3  # Output dimension of Q network, i.e., the number of possible actions
         self.gamma = 0.99  # Discount factor
         self.eps = 1.0  # epsilon-greedy for exploration
         self.loss_fn = torch.nn.MSELoss()  # loss function
@@ -70,20 +64,23 @@ class DQN:
         """
         Returns an action for the agent to take during training process
         Args:
-            state: a numpy array with size 4
+            state: a numpy array with size 3
         Returns:
-            action: action index, 0 to 3
+            action: action index, 0 to 2
         """
         # if self.rng.uniform() < self.eps:  # Exploration
         #     action = self.rng.choice(self.output_dim)
         # else:  # Exploitation
         self.dqn.eval()  # Switch to evaluation mode
         with torch.no_grad():
+            # Check if the state is a list and convert it to a numpy array if so
+            if isinstance(state, list):
+                state = np.array(state)
             state = torch.from_numpy(state).float().unsqueeze(0)
             scores = self.dqn(state)
         self.dqn.train()  # Switch back to training mode
         _, argmax = torch.max(scores.data, 1)
-        action = int(argmax.numpy())
+        action = int(argmax.item()) # Add 1 to shift index to 1-based
         
         return action
 
@@ -92,7 +89,7 @@ class DQN:
         Train the Q network
         Args:
             s0: current state, a numpy array with size 4
-            a0: current action, 0 to 3
+            a0: current action, 1 to 3
             r: reward
             s1: next state, a numpy array with size 4
             done: done=True means that the episode terminates and done=False means that the episode does not terminate.
@@ -123,18 +120,6 @@ class DQN:
         self.optim.zero_grad()
         loss.backward()
         self.optim.step()
-
-    # def add_to_replay_memory(self, state, action, reward, next_state, done):
-    #     """
-    #     Add samples to replay memory
-    #     Args:
-    #         state: current state, a numpy array with size 4
-    #         action: current action, 0 to 3
-    #         reward: reward
-    #         next_state: next state, a numpy array with size 4
-    #         done: done=True means that the episode terminates and done=False means that the episode does not terminate.
-    #     """
-    #     self.replay_memory_buffer.buffer.append((state, action, reward, next_state, done))
     
     def get_random_sample_from_replay_mem(self):
         """

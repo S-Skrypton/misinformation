@@ -10,69 +10,28 @@ import json
 import os
 
 
-def run_simulation(num_users, iteration):
-    
-    filename = f"network_simulation_{iteration}.json"
-    
+def run_simulation(num_users, iteration):   
     # Check if the graph already exists
     print(f"Creating new graph for iteration {iteration}")
     G = create_social_network(num_users)
-    save_graph_to_json(G, filename)  # Save the newly created graph to a JSON file
     agent = DQN(seed=0)
     # message_tree = simulate_message_post(G)
-    message_tree = simulate_message_post(G, agent.replay_memory_buffer)
+    initial_reward, message_tree = simulate_message_post(G, agent.replay_memory_buffer)
     visualize_message_spread(message_tree, G, iteration)
     save_replay_buffer_to_file(agent.replay_memory_buffer,f"replay_buffer_{iteration}.txt")
     save_paths_to_file(message_tree, iteration)
-    # # Variables for tracking rewards
-    max_reward = 0
-    reward_queue = deque(maxlen=100)
-
-
+    initial_poster=[n for n, d in message_tree.in_degree() if d==0][0] if [n for n, d in message_tree.in_degree() if d==0] else None
+    rewards_queue = []
+    # rewards_queue.append(initial_reward)
     # Training loop
-    for i in range(10):
+    for i in range(2000):  # Assuming 2000 total training iterations
         agent.train(1)
-        print(i)
-    # for i in range(2000):
-    #     node_id = random.choice(list(G.nodes))
-    #     state = get_state(node_id, G)
-    #     done = False
-    #     episodic_reward = 0
-        
-    #     while not done:
-    #         # action = agent.select_action(np.array(state))
-    #         # apply_action(node_id, action, G)
-    #         # reward = compute_reward(node_id, action, G)
-    #         # next_state = get_state(node_id, G)
-            
-    #         # Define your own termination condition
-    #         done = False
-            
-    #         episodic_reward += reward
-    #         agent.train(np.array(state), action, reward, np.array(next_state), done)
-    #         state = next_state
-        
-    #     reward_queue.append(episodic_reward)
-        
-    #     if (i + 1) % 10 == 0:
-    #         print(f'Training episode {i + 1}, reward: {episodic_reward}', end='')
-        
-    #     if len(reward_queue) == 100:
-    #         avg_reward = sum(reward_queue) / 100
-    #         if (i + 1) % 10 == 0:
-    #             print(f', moving average reward: {avg_reward}')
-            
-    #         if avg_reward > max_reward:
-    #             max_reward = avg_reward
-            
-    #         if avg_reward >= -195:  # Adjust the threshold, first need to compute the baseline
-    #             print(f"Problem solved in {i + 1} episodes")
-    #             break
-    #     else:
-    #         if (i + 1) % 10 == 0:
-    #             print('')
-
-    # print(f'Average reward over 100 episodes: {max_reward}')
+        if (i + 1) % 10 == 0:
+            reward = simulate_spread(G, agent, initial_poster)
+            rewards_queue.append(reward)
+        if (i + 1) % 100 == 0:  # Evaluate every 100 iterations
+            average_reward = np.mean(rewards_queue)
+            print(f"Evaluation after {i + 1} iterations: running average is = {average_reward}")
 
 def run_multiple_simulations(num_users, num_simulations):
     random.seed(598)
@@ -89,10 +48,10 @@ def simulate_message_post(G, replay_buffer): # !!! insert action function into t
     message_tree = nx.DiGraph()
     queue = [(initial_poster, 0)]
     message_tree.add_node(initial_poster, level=0)
-
     # Apply a random action to the initial poster
-    action = random.randint(1, 2)  # Assume actions are numbered 1 to 3
+    action = random.randint(0,1)  # Assume actions are numbered 1 to 3
     apply_action(initial_poster, action, G)
+    initial_reward = compute_reward(initial_poster, None, action, G)
     G.nodes[initial_poster]['action'] = action
 
     while queue:
@@ -105,24 +64,51 @@ def simulate_message_post(G, replay_buffer): # !!! insert action function into t
                 message_tree.add_edge(current_node, follower)
                 queue.append((follower, level+1))
                 # Apply a random action to the follower
-                action = random.randint(0, 3)
+                action = random.randint(0, 2)
                 apply_action(follower, action, G)
                 G.nodes[follower]['action']=action
                 
                 state = get_state(current_node, G)
                 next_state = get_state(follower, G)
                 reward = compute_reward(current_node, follower, action, G)
+                initial_reward += reward
                 done = len(G.nodes[follower]['followers']) == 0  # Adjust according to your terminal state logic
                 replay_buffer.add(state, action, reward, next_state, done)
-    return message_tree
+    print(f"initial_reward is {initial_reward}")
+    return initial_reward, message_tree
 
-def save_graph_to_json(graph, filename):
-    data = nx.node_link_data(graph)  # convert graph to node-link format which is suitable for JSON
-    with open(filename, 'w') as f:
-        json.dump(data, f)
+def simulate_spread(G, agent, initial_poster):
+    """Simulate message traversal in the network using the agent's policy, strictly for evaluation."""
+    message_tree = nx.DiGraph()
+    queue = [(initial_poster, 0)]
+    message_tree.add_node(initial_poster, level=0)
 
-# def load_graph_from_json(filename):
-#     with open(filename, 'r') as f:
-#         data = json.load(f)
-#     return nx.node_link_graph(data)  # create a NetworkX graph from node-link data
+    # Select action for the initial poster using the agent's policy
+    state = get_state(initial_poster, G)  # Define how to extract the state
+    action = agent.select_action(state)
+    apply_action(initial_poster, action, G)  # Apply the selected action to modify the graph state
+    G.nodes[initial_poster]['action'] = action
+    total_reward = compute_reward(initial_poster, None, action, G)
+
+    while queue:
+        current_node, level = queue.pop(0)
+        followers = G.nodes[current_node]['followers']
+
+        for follower in followers:
+            if follower not in message_tree and random.random() < G.nodes[current_node]['repost_probability']:
+                message_tree.add_node(follower, level=level+1)
+                message_tree.add_edge(current_node, follower)
+                queue.append((follower, level+1))
+
+                # Agent selects action for each follower
+                follower_state = get_state(follower, G)
+                follower_action = agent.select_action(follower_state)
+                apply_action(follower, follower_action, G)
+                G.nodes[follower]['action'] = follower_action
+
+                # Get reward for the action
+                reward = compute_reward(current_node, follower, follower_action, G)
+                total_reward += reward 
+
+    return total_reward
 

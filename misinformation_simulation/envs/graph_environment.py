@@ -45,26 +45,28 @@ def apply_action(node_id, action, G):
     # if action == 1:
     #     # Block 5 posts
     #     G.nodes[node_id]['blocked_posts'] = 5
-    if action == 1:
+    if action == 0:
         # Do nothing
         pass
-    elif action == 2:
+    elif action == 1:
         # Label and reduce probability
-        G.nodes[node_id]['repost_probability'] *= 0.3
-    elif action == 3:
+        G.nodes[node_id]['repost_probability'] *= 0.95
+    elif action == 2:
         # Ban all in chain - requires identifying the chain first (don't let any reposts from this node go through)
-        node_data['repost_probability'] *= 0.1
+        node_data['repost_probability'] *= 0.5
         # stack = [node_id]
         # while stack:
         #     current_node = stack.pop()
         #     G.nodes[current_node]['repost_probability'] = 0
         #     followers = G.nodes[current_node]['followers']
         #     stack.extend(followers)
+    else:
+        print(f"print invalid action! {action}")
 
 # Cost functions
 def cost_of_action(action):
     """Returns the cost of an action, exponentially increasing."""
-    return 2 ** action
+    return 10 ** (2*action)
 
 def cost_of_node_type(node_type):
     """Returns the cost associated with the node's type."""
@@ -80,7 +82,10 @@ def compute_reward(current_node, next_node, action, G):
     """Computes the reward after an action based on current and next node."""
     action_cost = cost_of_action(action)
     current_node_type_cost = cost_of_node_type(G.nodes[current_node]['type'])
-    next_node_type_cost = cost_of_node_type(G.nodes[next_node]['type'])
+    # For root node
+    next_node_type_cost = 0
+    if next_node is not None:    
+        next_node_type_cost = cost_of_node_type(G.nodes[next_node]['type'])
 
     # Assuming you want to incorporate the type cost of both nodes
     reward = -(action_cost + current_node_type_cost + next_node_type_cost)
