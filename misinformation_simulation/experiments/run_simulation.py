@@ -22,7 +22,7 @@ def run_simulation(num_users, iteration):
     # message_tree = simulate_message_post(G)
     message_tree = simulate_message_post(G, agent.replay_memory_buffer)
     visualize_message_spread(message_tree, G, iteration)
-    save_replay_buffer_to_file(agent.replay_memory_buffer,"replay_buffer.txt")
+    save_replay_buffer_to_file(agent.replay_memory_buffer,f"replay_buffer_{iteration}.txt")
     save_paths_to_file(message_tree, iteration)
     # # Variables for tracking rewards
     max_reward = 0
