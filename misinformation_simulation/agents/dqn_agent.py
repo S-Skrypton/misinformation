@@ -79,6 +79,9 @@ class DQN:
         # else:  # Exploitation
         self.dqn.eval()  # Switch to evaluation mode
         with torch.no_grad():
+            # Check if the state is a list and convert it to a numpy array if so
+            if isinstance(state, list):
+                state = np.array(state)
             state = torch.from_numpy(state).float().unsqueeze(0)
             scores = self.dqn(state)
         self.dqn.train()  # Switch back to training mode
@@ -123,8 +126,6 @@ class DQN:
         self.optim.zero_grad()
         loss.backward()
         self.optim.step()
-
-        return reward_batch.sum().item()
 
     # def add_to_replay_memory(self, state, action, reward, next_state, done):
     #     """
