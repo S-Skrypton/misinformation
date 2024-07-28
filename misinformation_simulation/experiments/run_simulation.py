@@ -11,21 +11,24 @@ import os
 
 def simulate_message_post(G, agent, initial_poster, mode): # !!! insert action function into this
     """Simulate message traversal in the network.
-        mode = 0, random action
-        mode = 1, baseline test
-        mode = 2, offline train"""
-    while True:
-        initial_poster = random.choice(list(G.nodes))
-        # Check if the node has any followers
-        if len(G.nodes[initial_poster]['followers']) > 0:
-            break
+        mode = 0,1,2, baseline of action {mode}
+        mode = r, random actions
+        mode = off, offline train"""
     message_tree = nx.DiGraph()
     queue = [(initial_poster, 0)]
     message_tree.add_node(initial_poster, level=0)
-    # Apply a random action to the initial poster
-    action = random.randint(0,1)  # Assume actions are numbered 1 to 3
+    action = 0
+    # Apply action to the initial poster
+    if isinstance(mode, int):
+        action = mode
+    elif mode == "r":
+        action = random.randint(0,1)
+    elif mode == "off":
+        action = agent.select_action(get_state(initial_poster, G))
+    else:
+        print(f"Invalid mode {mode}!")
     apply_action(initial_poster, action, G)
-    initial_reward = compute_reward(initial_poster, None, action, G)
+    total_reward = compute_reward(initial_poster, None, action, G)
     G.nodes[initial_poster]['action'] = action
 
     while queue:
@@ -37,20 +40,25 @@ def simulate_message_post(G, agent, initial_poster, mode): # !!! insert action f
                 message_tree.add_node(follower, level=level+1)
                 message_tree.add_edge(current_node, follower)
                 queue.append((follower, level+1))
-                # Apply a random action to the follower
-                action = random.randint(0, 2)
+                if isinstance(mode, int):
+                    action = mode
+                    total_reward += compute_reward(current_node, follower, action, G)
+                elif mode == "r":
+                    action = random.randint(0,2)
+                    state = get_state(current_node, G)
+                    next_state = get_state(follower, G)
+                    reward = compute_reward(current_node, follower, action, G)
+                    total_reward += reward
+                    done = len(G.nodes[follower]['followers']) == 0  # Adjust according to your terminal state logic
+                    agent.replay_memory_buffer.add(state, action, reward, next_state, done)
+                elif mode == "off":
+                    action = agent.select_action(get_state(follower, G))
+                    total_reward += compute_reward(current_node, follower, action, G)
+                else:
+                    print(f"Invalid mode {mode}!")
                 apply_action(follower, action, G)
-                G.nodes[follower]['action']=action
-                
-                state = get_state(current_node, G)
-                next_state = get_state(follower, G)
-                reward = compute_reward(current_node, follower, action, G)
-                initial_reward += reward
-                done = len(G.nodes[follower]['followers']) == 0  # Adjust according to your terminal state logic
-                agent.replay_buffer.add(state, action, reward, next_state, done)
-    print(f"initial_reward is {initial_reward}")
-    return initial_reward, message_tree
-
+                G.nodes[follower]['action'] = action
+    return total_reward, message_tree
 
 
 def run_simulation(num_users, iteration):   
@@ -58,23 +66,36 @@ def run_simulation(num_users, iteration):
     print(f"Creating new graph for iteration {iteration}")
     G = create_social_network(num_users)
     agent = DQN(seed=0)
-    # message_tree = simulate_message_post(G)
-    initial_reward, message_tree = simulate_message_post(G, agent, initial_poster, 0)
-    visualize_message_spread(message_tree, G, iteration)
-    save_replay_buffer_to_file(agent.replay_memory_buffer,f"replay_buffer_{iteration}.txt")
-    save_paths_to_file(message_tree, iteration)
-    initial_poster=[n for n, d in message_tree.in_degree() if d==0][0] if [n for n, d in message_tree.in_degree() if d==0] else None
+    # Choose a lucky user
+    initial_poster = 0
+    while True:
+        initial_poster = random.choice(list(G.nodes))
+        # Check if the node has any followers
+        if len(G.nodes[initial_poster]['followers']) > 0:
+            break
+    # basline tests
+    for action in range(3):
+        basline_reward, _  = simulate_message_post(G, None, initial_poster, action)
+        print(f"Baseline of action {action} is {basline_reward}")
+
+    # randomly apply actions
+    random_reward, message_tree = simulate_message_post(G, agent, initial_poster, "r")
+    print(f"Randomly chosen actions has reward {random_reward}")
+    # visualize_message_spread(message_tree, G, iteration)
+    # save_replay_buffer_to_file(agent.replay_memory_buffer,f"replay_buffer_{iteration}.txt")
+    # save_paths_to_file(message_tree, iteration)
+
+    # offline training (need message tree generated by random mode)
     rewards_queue = []
-    # rewards_queue.append(initial_reward)
     # Training loop
     for i in range(2000):  # Assuming 2000 total training iterations
         agent.train(1)
         if (i + 1) % 10 == 0:
-            reward = simulate_spread(G, agent, initial_poster)
+            reward, _ = simulate_message_post(G, agent, initial_poster, "off")
             rewards_queue.append(reward)
         if (i + 1) % 100 == 0:  # Evaluate every 100 iterations
             average_reward = np.mean(rewards_queue)
-            print(f"Evaluation after {i + 1} iterations: running average is = {average_reward}")
+            print(f"Evaluation after {i + 1} iterations, the running average reward is = {average_reward}")
 
 def run_multiple_simulations(num_users, num_simulations):
     random.seed(598)
