@@ -30,9 +30,14 @@ def run_simulation(num_users, iteration):
 
 
     # Training loop
-    for i in range(10):
-        agent.train(1)
-        print(i)
+    total_rewards = 0
+    for i in range(100):
+        reward = agent.train(i + 1)  # Collect reward returned from training
+        total_rewards += reward  # Accumulate the rewards
+
+        if (i + 1) % 10 == 0:  # Every 10 iterations
+            print(f"Iteration {i + 1}: Accumulated Reward = {total_rewards}")
+            total_rewards = 0  # Reset the reward counter after printing
     # for i in range(2000):
     #     node_id = random.choice(list(G.nodes))
     #     state = get_state(node_id, G)

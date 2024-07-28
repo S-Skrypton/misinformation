@@ -124,6 +124,8 @@ class DQN:
         loss.backward()
         self.optim.step()
 
+        return reward_batch.sum().item()
+
     # def add_to_replay_memory(self, state, action, reward, next_state, done):
     #     """
     #     Add samples to replay memory
