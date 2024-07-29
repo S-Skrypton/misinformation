@@ -12,12 +12,15 @@ def create_social_network(num_nodes):
     random.shuffle(types)
     for i in range(num_nodes):
         user_type = types[i]
-        repost_probability = 0.15 if user_type == 2 else 0.03 if user_type == 0 else 0.01
-        G.add_node(i, followers=[], followings=[], type=user_type, repost_probability=repost_probability, action=1)
+        raw_repost_probability = 0.15 if user_type == 2 else 0.03 if user_type == 0 else 0.01
+        G.add_node(i, followers=[], followings=[], type=user_type, 
+                   raw_repost_probability=raw_repost_probability, adjust_rpp=raw_repost_probability, action=1)
     for i in G.nodes():
         user_data = G.nodes[i]
-        followers = random.sample(list(G.nodes), min(int(random.uniform(0.2, 0.3) * num_nodes), 1) if user_data['type'] == 2 else min(int(random.uniform(0, 0.1) * num_nodes), 50))
-        followings = random.sample([n for n in G.nodes if n != i], min(int(random.uniform(0, 0.05) * num_nodes), 10) if user_data['type'] == 2 else min(int(random.uniform(0, 0.2) * num_nodes), 50))
+        followers = random.sample(list(G.nodes), min(int(random.uniform(0.2, 0.3) * num_nodes), 1) 
+                                  if user_data['type'] == 2 else min(int(random.uniform(0, 0.1) * num_nodes), 50))
+        followings = random.sample([n for n in G.nodes if n != i], min(int(random.uniform(0, 0.05) * num_nodes), 10) 
+                                   if user_data['type'] == 2 else min(int(random.uniform(0, 0.2) * num_nodes), 50))
         for follower in followers:
             if i != follower:
                 G.add_edge(follower, i)
@@ -41,7 +44,6 @@ def get_state(node_id, G):
 # apply action function
 def apply_action(node_id, action, G):
     """ Applies a given action to a node """
-    node_data = G.nodes[node_id]
     # if action == 1:
     #     # Block 5 posts
     #     G.nodes[node_id]['blocked_posts'] = 5
@@ -50,10 +52,10 @@ def apply_action(node_id, action, G):
         pass
     elif action == 1:
         # Label and reduce probability
-        G.nodes[node_id]['repost_probability'] *= 0.95
+        G.nodes[node_id]['adjust_rpp'] *= 0.95
     elif action == 2:
         # Ban all in chain - requires identifying the chain first (don't let any reposts from this node go through)
-        node_data['repost_probability'] *= 0.5
+        G.nodes[node_id]['adjust_rpp'] *= 0.5
         # stack = [node_id]
         # while stack:
         #     current_node = stack.pop()
@@ -91,6 +93,12 @@ def compute_reward(current_node, next_node, action, G):
     reward = -(action_cost + current_node_type_cost + next_node_type_cost)
     return reward
 
+def reset_adjust_rpp(G):
+    """
+    Reset adjust_rpp attribute for each node in the graph to match raw_repost_probability.
 
+    """
+    for i in G.nodes():
+        G.nodes[i]['adjust_rpp'] = G.nodes[i]['raw_repost_probability']
 
 # DONE 
