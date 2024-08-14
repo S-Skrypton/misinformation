@@ -4,8 +4,10 @@ from agents.dqn_agent import DQN
 import random
 import numpy as np
 import networkx as nx
+import matplotlib.pyplot as plt
+import matplotlib.patches as mpatches
 
-def simulate_message_post(G, agent, initial_poster, mode): # !!! insert action function into this
+def simulate_message_post(G, agent, initial_poster, mode, capture_details=False): # !!! insert action function into this
     """Simulate message traversal in the network.
         mode = 0, 1, 2 baseline of action 0, 1, 2
         mode = r, random actions
@@ -26,6 +28,8 @@ def simulate_message_post(G, agent, initial_poster, mode): # !!! insert action f
     apply_action(initial_poster, action, G)
     total_reward = compute_reward(initial_poster, None, action, G)
     G.nodes[initial_poster]['action'] = action
+
+    details = [(initial_poster, get_state(initial_poster, G), action)] if capture_details else None
 
     while queue:
         current_node, level = queue.pop(0)
@@ -48,6 +52,8 @@ def simulate_message_post(G, agent, initial_poster, mode): # !!! insert action f
                     follower_state = get_state(follower, G)
                     action = agent.select_action(follower_state)
                     total_reward += compute_reward(current_node, follower, action, G)
+                    if capture_details:
+                        details.append((follower, get_state(follower, G), action))
                 elif isinstance(mode, int):
                     action = mode
                     total_reward += compute_reward(current_node, follower, action, G)
@@ -55,7 +61,7 @@ def simulate_message_post(G, agent, initial_poster, mode): # !!! insert action f
                     print(f"Invalid mode {mode}!")
                 apply_action(follower, action, G)
                 G.nodes[follower]['action'] = action
-    return total_reward, message_tree
+    return total_reward, message_tree, details
 
 
 def run_simulation(num_users, iteration):   
@@ -72,9 +78,11 @@ def run_simulation(num_users, iteration):
             break
 
     # randomly apply actions
-    random_reward, message_tree = simulate_message_post(G, agent, initial_poster, "r")
+    random_reward, message_tree, _ = simulate_message_post(G, agent, initial_poster, "r")
     print(f"Randomly chosen actions has reward {random_reward}")
     visualize_message_spread(message_tree, G, iteration)
+    # test
+    # visualize_final_network_state(message_tree, G, iteration)
     save_replay_buffer_to_file(agent.replay_memory_buffer,f"replay_buffer_{iteration}.txt")
     save_paths_to_file(message_tree, iteration)
     
@@ -83,7 +91,7 @@ def run_simulation(num_users, iteration):
         base_reward = []
         for trial in range(100):
             reset_adjust_rpp(G)
-            single_reward,_= simulate_message_post(G, agent, initial_poster, action)
+            single_reward, _, _= simulate_message_post(G, agent, initial_poster, action)
             base_reward.append(single_reward)
         avg_base = np.mean(base_reward)
         print(f"Baseline action {action} has reward {avg_base}")
@@ -95,14 +103,49 @@ def run_simulation(num_users, iteration):
     for i in range(2000):  # Assuming 2000 total training iterations
         agent.train(1)
         if (i + 1) % 10 == 0:
-            reward, _ = simulate_message_post(G, agent, initial_poster, "off")
+            reward, _, _= simulate_message_post(G, agent, initial_poster, "off")
             rewards_queue.append(reward)
         if (i + 1) % 100 == 0:  # Evaluate every 100 iterations
             average_reward = np.mean(rewards_queue)
             print(f"Evaluation after {i + 1} iterations, the running average reward is = {average_reward}")
+    final_reward, final_tree, final_details = simulate_message_post(G, agent, initial_poster, 'off', capture_details=True)
+    visualize_final_network_state(final_tree, G, iteration)
 
 def run_multiple_simulations(num_users, num_simulations):
     random.seed(598)
     for i in range(1, num_simulations + 1):
         run_simulation(num_users, i)
+
+
+def visualize_final_network_state(message_tree, G, iteration):
+    plt.figure(figsize=(20, 15))  # Large figure for clarity
+    pos = nx.multipartite_layout(message_tree, subset_key="level")  # Layout nodes by level
+
+    # Define color mapping for node types and actions
+    type_color_map = {0: 'skyblue', 1: 'pink', 2: 'gold'}  # Type colors
+    action_color_map = {0: 'lightgray', 1: 'blue', 2: 'red'}  # Action colors
+
+    # Combine type color and action color for visualization
+    node_colors = [action_color_map[G.nodes[node]['action']] if G.nodes[node]['action'] != 0 else type_color_map[G.nodes[node]['type']] for node in message_tree]
+
+    # Draw the network
+    nx.draw(message_tree, pos, with_labels=True, node_size=500, node_color=node_colors, font_size=10, font_weight='bold', arrowstyle='-|>', arrowsize=10)
+
+    # Legend for types
+    celebrity_patch = mpatches.Patch(color='gold', label='Celebrity')
+    common_patch = mpatches.Patch(color='skyblue', label='Common user')
+    robot_patch = mpatches.Patch(color='pink', label='Robot')
+
+    # Legend for actions
+    no_action_patch = mpatches.Patch(color='lightgray', label='No Action')
+    action_1_patch = mpatches.Patch(color='blue', label='Action 1 - Reduce Probability')
+    action_2_patch = mpatches.Patch(color='red', label='Action 2 - Ban All in Chain')
+
+    # Set up legend
+    plt.legend(handles=[celebrity_patch, common_patch, robot_patch, no_action_patch, action_1_patch, action_2_patch], loc='upper right')
+
+    # Title and save the figure
+    plt.title(f"Final Network State Visualization - Simulation {iteration}")
+    plt.savefig(f"Final_Network_State_{iteration}.png")  
+    plt.close()
 

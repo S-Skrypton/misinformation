@@ -14,7 +14,7 @@ def create_social_network(num_nodes):
         user_type = types[i]
         raw_repost_probability = 0.15 if user_type == 2 else 0.03 if user_type == 0 else 0.01
         G.add_node(i, followers=[], followings=[], type=user_type, 
-                   raw_repost_probability=raw_repost_probability, adjust_rpp=raw_repost_probability, action=1)
+                   raw_repost_probability=raw_repost_probability, adjust_rpp=raw_repost_probability, action=0)
     for i in G.nodes():
         user_data = G.nodes[i]
         followers = random.sample(list(G.nodes), min(int(random.uniform(0.2, 0.3) * num_nodes), 1) 
@@ -56,12 +56,12 @@ def apply_action(node_id, action, G):
     elif action == 2:
         # Ban all in chain - requires identifying the chain first (don't let any reposts from this node go through)
         G.nodes[node_id]['adjust_rpp'] *= 0.5
-        # stack = [node_id]
-        # while stack:
-        #     current_node = stack.pop()
-        #     G.nodes[current_node]['repost_probability'] = 0
+        # queue = [node_id]
+        # while queue:
+        #     current_node = queue.pop(0)
+        #     G.nodes[current_node]['adjust_rpp'] = 0  # Set current node's repost probability to zero
         #     followers = G.nodes[current_node]['followers']
-        #     stack.extend(followers)
+        #     queue.extend(followers)  # Enqueue followers to apply the action to them as well
     else:
         print(f"print invalid action! {action}")
 
