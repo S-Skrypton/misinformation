@@ -14,7 +14,9 @@ def create_social_network(num_nodes):
         user_type = types[i]
         raw_repost_probability = 0.15 if user_type == 2 else 0.03 if user_type == 0 else 0.01
         G.add_node(i, followers=[], followings=[], type=user_type, 
-                   raw_repost_probability=raw_repost_probability, adjust_rpp=raw_repost_probability, action=1)
+                   raw_repost_probability=raw_repost_probability, 
+                   adjust_rpp=raw_repost_probability, action=0,
+                   num_infected=0)
     for i in G.nodes():
         user_data = G.nodes[i]
         followers = random.sample(list(G.nodes), min(int(random.uniform(0.2, 0.3) * num_nodes), 1) 
@@ -35,10 +37,12 @@ def create_social_network(num_nodes):
 def get_state(node_id, G):
     node_data = G.nodes[node_id]
     return [
+        # add # of infected nodes before this state 
         node_data['type'],  # Type of the node
         # node_data['repost_probability'],  # Current repost probability
         len(node_data['followers']) / len(G),  # Normalized number of followers
-        len(node_data['followings']) / len(G)  # Normalized number of followings
+        len(node_data['followings']) / len(G),  # Normalized number of followings
+        node_data['num_infected']
     ]
 
 # apply action function
@@ -93,12 +97,13 @@ def compute_reward(current_node, next_node, action, G):
     reward = -(action_cost + current_node_type_cost + next_node_type_cost)
     return reward
 
-def reset_adjust_rpp(G):
+def reset_graph(G):
     """
     Reset adjust_rpp attribute for each node in the graph to match raw_repost_probability.
 
     """
     for i in G.nodes():
         G.nodes[i]['adjust_rpp'] = G.nodes[i]['raw_repost_probability']
+        G.nodes[i]['num_infected']=0
 
 # DONE 

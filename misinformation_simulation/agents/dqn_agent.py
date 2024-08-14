@@ -45,8 +45,8 @@ class ReplayBuffer:
 
 class DQN:
     def __init__(self, seed=None):
-        self.dqn = QNetwork(3, 3, 128)  # Q network
-        self.dqn_target = QNetwork(3, 3, 128)  # Target Q network
+        self.dqn = QNetwork(4, 3, 128)  # Q network
+        self.dqn_target = QNetwork(4, 3, 128)  # Target Q network
         self.dqn_target.load_state_dict(self.dqn.state_dict())
         self.batch_size = 64  # Batch size
         self.output_dim = 3  # Output dimension of Q network, i.e., the number of possible actions
