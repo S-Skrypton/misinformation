@@ -4,7 +4,7 @@ import networkx as nx
 import random
 
 
-def visualize_message_spread(message_tree, G, iteration):
+def visualize_message_spread(message_tree, G, iteration, mode):
     plt.figure(figsize=(20, 15))
     pos = nx.multipartite_layout(message_tree, subset_key="level")
     color_map = ['gold' if G.nodes[node]['type'] == 2 else 'skyblue' if G.nodes[node]['type'] == 0 else 'pink' for node in message_tree]
@@ -15,8 +15,8 @@ def visualize_message_spread(message_tree, G, iteration):
     robot_patch = mpatches.Patch(color='pink', label='Robot')
     plt.legend(handles=[celebrity_patch, common_patch, robot_patch], loc='upper right')
     
-    plt.title(f"Message Spread Visualization as a Tree - Simulation {iteration}")
-    plt.savefig(f"Message_Traversal_Tree_{iteration}.png")  # Save each figure with a unique identifier
+    plt.title(f"Message Spread Visualization as a Tree - Simulation {iteration} - Mode {mode}")
+    plt.savefig(f"Message_Traversal_Tree_{iteration}_{mode}.png")  # Save each figure with a unique identifier
     plt.close() 
 
 def save_paths_to_file(message_tree, iteration):
