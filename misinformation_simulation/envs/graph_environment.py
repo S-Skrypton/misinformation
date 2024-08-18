@@ -59,6 +59,7 @@ def apply_action(node_id, action, G):
         G.nodes[node_id]['adjust_rpp'] *= 0.95
     elif action == 2:
         # Ban all in chain - requires identifying the chain first (don't let any reposts from this node go through)
+        # skip this node and all its followers
         G.nodes[node_id]['adjust_rpp'] *= 0.5
         # stack = [node_id]
         # while stack:

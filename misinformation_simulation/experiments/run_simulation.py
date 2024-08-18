@@ -102,6 +102,7 @@ def run_simulation(num_users, iteration):
             average_reward = np.mean(rewards_queue)
             print(f"Evaluation after {i + 1} iterations, the running average reward is = {average_reward}")
     visualize_message_spread(message_tree, G, iteration, "offline training")
+    # What needs to be added: use the agent and different random seed to run 100 plots, and gather the trend of the policy
 
 
 def run_multiple_simulations(num_users, num_simulations):
