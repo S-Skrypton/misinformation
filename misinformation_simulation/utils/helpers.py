@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import networkx as nx
+import numpy as np
 import random
 
 
@@ -39,3 +40,33 @@ def save_replay_buffer_to_file(replay_buffer, filename):
         for transition in replay_buffer.buffer:
             state, action, reward, next_state, done = transition
             f.write(f"State: {state}, Action: {action}, Reward: {reward}, Next State: {next_state}, Done: {done}\n")
+
+def plot_action_proportions(G, iteration):
+    node_types = [0, 1, 2]
+    action_counts_per_type = {node_type: {action: 0 for action in [0, 1, 2]} for node_type in node_types}
+    type_counts = {node_type: 0 for node_type in node_types}  
+    for node in G.nodes:
+        node_type = G.nodes[node].get('type') 
+        action = G.nodes[node].get('action') 
+        if node_type in action_counts_per_type and action in action_counts_per_type[node_type]:
+            action_counts_per_type[node_type][action] += 1
+            type_counts[node_type] += 1 
+    action_ratios_per_type = {
+        node_type: {action: action_counts_per_type[node_type][action] / type_counts[node_type] if type_counts[node_type] > 0 else 0 
+                    for action in [0, 1, 2]} 
+        for node_type in node_types
+    }
+    fig, ax = plt.subplots(figsize=(8, 6))
+    bar_width = 0.25
+    index = np.arange(len(node_types))
+    for i, action in enumerate([0, 1, 2]):
+        ratios = [action_ratios_per_type[node_type][action] for node_type in node_types]
+        ax.bar(index + i * bar_width, ratios, bar_width, label=f'Action {action}')
+    ax.set_xlabel('Node Types')
+    ax.set_ylabel('Proportion of Actions')
+    ax.set_title('Proportion of Actions by Node Types')
+    ax.set_xticks(index + bar_width)
+    ax.set_xticklabels(node_types)
+    ax.legend()
+    plt.tight_layout()
+    plt.savefig(f"Proportion of Actions by Node Types of iteration {iteration}.png")

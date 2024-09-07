@@ -54,7 +54,7 @@ class DQN:
         self.eps = 1.0  # epsilon-greedy for exploration
         self.loss_fn = torch.nn.MSELoss()  # loss function
         self.optim = torch.optim.Adam(self.dqn.parameters(), lr=0.001)  # optimizer for training
-        self.replay_memory_buffer = ReplayBuffer(10000)  # replay buffer
+        self.replay_memory_buffer = ReplayBuffer(60000)  # replay buffer
         if seed is None:
             self.rng = np.random.default_rng()
         else:
