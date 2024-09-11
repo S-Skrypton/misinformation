@@ -40,8 +40,10 @@ def get_state(node_id, G):
         # add # of infected nodes before this state 
         node_data['type'],  # Type of the node
         # node_data['repost_probability'],  # Current repost probability
-        len(node_data['followers']) / len(G),  # Normalized number of followers
-        len(node_data['followings']) / len(G),  # Normalized number of followings
+        len(node_data['followers']),
+        #/ len(G),  # Normalized number of followers
+        len(node_data['followings']),
+        #/ len(G),  # Normalized number of followings
         node_data['num_infected'] # number of infected nodes
     ]
 
@@ -73,7 +75,9 @@ def apply_action(node_id, action, G):
 # Cost functions
 def cost_of_action(action, num_followers):
     """Returns the cost of an action, exponentially increasing."""
-    return num_followers ** (1.5*action)
+    if action == 2:
+        return 0
+    return action
 
 def cost_of_node_type(node_type,num_followers):
     """Returns the cost associated with the node's type."""
