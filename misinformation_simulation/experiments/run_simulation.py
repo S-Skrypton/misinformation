@@ -1,5 +1,5 @@
 from envs.graph_environment import create_social_network, get_state, apply_action, compute_reward, reset_graph, cost_of_node_type
-from utils.helpers import visualize_message_spread, save_paths_to_file, save_replay_buffer_to_file
+from utils.helpers import visualize_message_spread, save_paths_to_file, save_replay_buffer_to_file, plot_action_proportions
 from agents.dqn_agent import DQN
 import random
 import numpy as np
@@ -59,6 +59,7 @@ def simulate_message_post(G, agent, initial_poster, mode, record_decisions=False
                     action = agent.select_action(follower_state)
                     reward = compute_reward(current_node, follower, action, G)
                     total_reward += reward
+                    temporary_buffer.append((get_state(current_node, G), action, reward, follower_state, False))
                     # Record decision
                     # if record_decisions:
                     #     decisions.append({
@@ -88,13 +89,10 @@ def simulate_message_post(G, agent, initial_poster, mode, record_decisions=False
             elif mode == "off":
                 if record_decisions:
                     decisions.append({
-                        'current_node': current_node,
-                        'follower_node': follower,
+                        'current_node_state': state,
+                        'follower_node_state': next_state,
                         'action': action,
-                        'reward': adjusted_reward,
-                        'current_node_type': G.nodes[current_node]['type'],
-                        'follower_node_type': G.nodes[follower]['type'],
-                        'state': follower_state
+                        'reward': adjusted_reward
                     })
 
         
@@ -118,10 +116,15 @@ def run_simulation(num_users, iteration):
             break
 
     # randomly apply actions
-    random_reward, message_tree = simulate_message_post(G, agent, initial_poster, "r", record_decisions=False)
-    print(f"Randomly chosen actions has reward {random_reward}")
+    random_list = []
+    for trial in range(100):
+        reset_graph(G)
+        random_reward, message_tree = simulate_message_post(G, agent, initial_poster, "r", record_decisions=False)
+        save_replay_buffer_to_file(agent.replay_memory_buffer,f"replay_buffer_{iteration}.txt")
+        random_list.append(random_reward)
+    print(f"Randomly chosen actions has average reward {np.mean(random_list)}")
     visualize_message_spread(message_tree, G, iteration,"random")
-    save_replay_buffer_to_file(agent.replay_memory_buffer,f"replay_buffer_{iteration}.txt")
+    #save_replay_buffer_to_file(agent.replay_memory_buffer,f"replay_buffer_{iteration}.txt")
     #save_paths_to_file(message_tree, iteration)
 
     # baselines
