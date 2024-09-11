@@ -4,6 +4,9 @@ from agents.dqn_agent import DQN
 import random
 import numpy as np
 import networkx as nx
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
 
 def simulate_message_post(G, agent, initial_poster, mode, record_decisions=False): # !!! insert action function into this
     """Simulate message traversal in the network.
@@ -125,7 +128,7 @@ def run_simulation(num_users, iteration):
     for action in range(3):
         reset_graph(G)
         base_reward = []
-        for trial in range(1000):
+        for trial in range(100):
             reset_graph(G)
             single_reward,message_tree= simulate_message_post(G, agent, initial_poster, action)
             base_reward.append(single_reward)
@@ -138,6 +141,7 @@ def run_simulation(num_users, iteration):
     rewards_queue = []
     last_100_decisions = []
     # Training loop
+
     for i in range(6000):  # Assuming 2000 total training iterations
         reset_graph(G)
         agent.train(1)
@@ -157,9 +161,11 @@ def run_simulation(num_users, iteration):
             # Convert each decision dictionary to a string and write it to the file
             decision_str = f"{decision}\n"
             file.write(decision_str)
-    # state_actions = evaluate_agent(agent, G, num_states=100)
+
+    state_actions = evaluate_agent(agent, G, num_states=100)
     # create_heatmap(state_actions)
     run_agent_evaluation(G, agent)
+    plot_action_proportions(G, iteration)
     # What needs to be added: use the agent and different random seed to run 100 plots, and gather the trend of the policy
 
 
@@ -176,15 +182,9 @@ def evaluate_agent(agent, G, num_states=100):
         state = get_state(node, G)
         action = agent.select_action(state)
         state_actions.append((state, action))
-
     return state_actions
 
-
 def create_heatmap(state_actions):
-    import numpy as np
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-
     # Assuming states have a specific structure, adjust indices as needed
     action_matrix = np.zeros((3, 10, 10))  # Adjust dimensions as per your state features
     counts = np.zeros((3, 10, 10))
@@ -204,7 +204,7 @@ def create_heatmap(state_actions):
         plt.title(f'Heatmap of Actions for Node Type {i}')
         plt.xlabel('Normalized Number of Followings')
         plt.ylabel('Normalized Number of Followers')
-        plt.show()
+        plt.savefig(f"Heatmap of Actions for Node Type {i}.png")  # Save each figure with a unique identifier
 
 
 def generate_diverse_states(G, num_samples_per_type=10):
