@@ -76,11 +76,11 @@ def apply_action(node_id, action, G):
 def cost_of_action(action, num_followers):
     """Returns the cost of an action, exponentially increasing."""
     if action == 0:
-        return 0.2
+        return 10
     elif action == 1:
-        return 0.5
-    elif action == 2:
         return 1
+    elif action == 2:
+        return 0
 
 def cost_of_node_type(node_type,num_followers):
     """Returns the cost associated with the node's type."""
