@@ -80,12 +80,12 @@ def simulate_message_post(G, agent, initial_poster, mode, record_decisions=False
                 G.nodes[follower]['action'] = action
         # compute the extra cost
         extra_cost = number_repost * cost_of_node_type(G.nodes[current_node]['type'],len(G.nodes[current_node]['followers']))
-        total_reward -= extra_cost * number_repost # needs to consider
+        # total_reward -= extra_cost * number_repost # needs to consider
         for experience in temporary_buffer:
             state, action, reward, next_state, done = experience
             adjusted_reward = reward - extra_cost
             if mode == "r":
-                agent.replay_memory_buffer.add(state, action, adjusted_reward, next_state, done)
+                agent.replay_memory_buffer.add(state, G.nodes[current_node]['action'], adjusted_reward, next_state, done)
             elif mode == "off":
                 if record_decisions:
                     decisions.append({
@@ -145,7 +145,7 @@ def run_simulation(num_users, iteration):
     last_100_decisions = []
     # Training loop
 
-    for i in range(6000):  # Assuming 2000 total training iterations
+    for i in range(20000):  # Assuming 2000 total training iterations
         reset_graph(G)
         agent.train(1)
         if (i + 1) % 10 == 0:
@@ -187,27 +187,6 @@ def evaluate_agent(agent, G, num_states=100):
         state_actions.append((state, action))
     return state_actions
 
-def create_heatmap(state_actions):
-    # Assuming states have a specific structure, adjust indices as needed
-    action_matrix = np.zeros((3, 10, 10))  # Adjust dimensions as per your state features
-    counts = np.zeros((3, 10, 10))
-
-    for state, action in state_actions:
-        node_type, normalized_followers, normalized_followings = int(state[0]), int(state[1]*10), int(state[2]*10)
-        action_matrix[node_type, normalized_followers, normalized_followings] += action
-        counts[node_type, normalized_followers, normalized_followings] += 1
-
-    # Average actions for heatmap
-    with np.errstate(divide='ignore', invalid='ignore'):
-        averaged_actions = np.nan_to_num(action_matrix / counts)
-
-    for i, matrix in enumerate(averaged_actions):
-        plt.figure(figsize=(10, 8))
-        sns.heatmap(matrix, annot=True, cmap='coolwarm', fmt=".1f")
-        plt.title(f'Heatmap of Actions for Node Type {i}')
-        plt.xlabel('Normalized Number of Followings')
-        plt.ylabel('Normalized Number of Followers')
-        plt.savefig(f"Heatmap of Actions for Node Type {i}.png")  # Save each figure with a unique identifier
 
 
 def generate_diverse_states(G, num_samples_per_type=10):
@@ -270,7 +249,6 @@ def run_agent_evaluation(G, agent):
     states = generate_diverse_states(G)
     states_actions = evaluate_agent_on_states(agent, states)
     visualize_agent_decisions(states_actions)
-    create_heatmap(states_actions)
 
 
 
