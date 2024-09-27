@@ -19,9 +19,9 @@ def create_social_network(num_nodes):
                    num_infected=0)
     for i in G.nodes():
         user_data = G.nodes[i]
-        followers = random.sample(list(G.nodes), min(int(random.uniform(0.1, 0.2) * num_nodes), 1) 
+        followers = random.sample(list(G.nodes), max(int(random.uniform(0.1, 0.2) * num_nodes), 1) # check!!
                                   if user_data['type'] == 2 else min(int(random.uniform(0, 0.005) * num_nodes), 50))
-        followings = random.sample([n for n in G.nodes if n != i], min(int(random.uniform(0, 0.005) * num_nodes), 10) 
+        followings = random.sample([n for n in G.nodes if n != i], min(int(random.uniform(0, 0.005) * num_nodes), 10) # Increase the number of followings of the robots
                                    if user_data['type'] == 2 else min(int(random.uniform(0, 0.02) * num_nodes), 50))
         for follower in followers:
             if i != follower:
@@ -76,11 +76,11 @@ def apply_action(node_id, action, G):
 def cost_of_action(action, num_followers):
     """Returns the cost of an action, exponentially increasing."""
     if action == 0:
-        return 10
-    elif action == 1:
-        return 1
-    elif action == 2:
         return 0
+    elif action == 1:
+        return 0.5
+    elif action == 2:
+        return 1.5
 
 def cost_of_node_type(node_type,num_followers):
     """Returns the cost associated with the node's type."""
