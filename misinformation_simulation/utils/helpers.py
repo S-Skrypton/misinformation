@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+from collections import defaultdict
 import networkx as nx
 import numpy as np
-import random
 
 
 def visualize_message_spread(message_tree, G, iteration, mode):
@@ -34,39 +34,118 @@ def save_paths_to_file(message_tree, iteration):
                     file.write(" -> ".join(map(str, path)) + '\n')
     print(f"All paths have been saved to {filename}.")
 
-
 def save_replay_buffer_to_file(replay_buffer, filename):
     with open(filename, 'w') as f:
         for transition in replay_buffer.buffer:
             state, action, reward, next_state, done = transition
             f.write(f"State: {state}, Action: {action}, Reward: {reward}, Next State: {next_state}, Done: {done}\n")
 
-def plot_action_proportions(G, iteration):
+def plot_action_proportions(G, iteration, message_trees):
     node_types = [0, 1, 2]
-    action_counts_per_type = {node_type: {action: 0 for action in [0, 1, 2]} for node_type in node_types}
-    type_counts = {node_type: 0 for node_type in node_types}  
-    for node in G.nodes:
-        node_type = G.nodes[node].get('type') 
-        action = G.nodes[node].get('action') 
-        if node_type in action_counts_per_type and action in action_counts_per_type[node_type]:
-            action_counts_per_type[node_type][action] += 1
-            type_counts[node_type] += 1 
-    action_ratios_per_type = {
-        node_type: {action: action_counts_per_type[node_type][action] / type_counts[node_type] if type_counts[node_type] > 0 else 0 
-                    for action in [0, 1, 2]} 
-        for node_type in node_types
-    }
+    actions = [0, 1, 2]
+    action_counts_per_type = {}
+    type_counts = {}
+
+    for node_type in node_types:
+        action_counts_per_type[node_type] = {}
+        for action in actions:
+            action_counts_per_type[node_type][action] = 0  
+        type_counts[node_type] = 0  
+    for message_tree in message_trees:
+        for node in message_tree:
+            node_type = G.nodes[node].get('type') 
+            action = G.nodes[node].get('action') 
+            # both are valid (node_type and action are in our lists), update the counts
+            if node_type in node_types and action in actions:
+                action_counts_per_type[node_type][action] += 1
+                type_counts[node_type] += 1
+    action_ratios_per_type = {}
+    for node_type in node_types:
+        action_ratios_per_type[node_type] = {}
+        if type_counts[node_type] > 0:  # avoid division by zero
+            for action in actions:
+                action_ratios_per_type[node_type][action] = action_counts_per_type[node_type][action] / type_counts[node_type]
+        else:
+            for action in actions:
+                action_ratios_per_type[node_type][action] = 0
     fig, ax = plt.subplots(figsize=(8, 6))
     bar_width = 0.25
     index = np.arange(len(node_types))
-    for i, action in enumerate([0, 1, 2]):
-        ratios = [action_ratios_per_type[node_type][action] for node_type in node_types]
+    for i, action in enumerate(actions):
+        ratios = []
+        for node_type in node_types:
+            ratios.append(action_ratios_per_type[node_type][action])
         ax.bar(index + i * bar_width, ratios, bar_width, label=f'Action {action}')
     ax.set_xlabel('Node Types')
     ax.set_ylabel('Proportion of Actions')
-    ax.set_title('Proportion of Actions by Node Types')
+    ax.set_title('Average Proportion of Actions by Node Types over 100 Iterations')
     ax.set_xticks(index + bar_width)
     ax.set_xticklabels(node_types)
     ax.legend()
     plt.tight_layout()
-    plt.savefig(f"Proportion of Actions by Node Types of iteration {iteration}.png")
+    plt.savefig(f"Proportion_of_Actions_by_Node_Types_{iteration}.png")
+
+def plot_avg_reward(avg_reward, baseline_reward, x_range, iteration):
+    plt.figure(figsize=(10, 6))
+    plt.plot(x_range, avg_reward, label='Offline Training Running Average Reward')
+    plt.plot(x_range, [baseline_reward[0]]*len(x_range), linestyle='--', label='Baseline Action 0 Reward')
+    plt.plot(x_range, [baseline_reward[1]]*len(x_range), linestyle='--', label='Baseline Action 1 Reward')
+    plt.plot(x_range,[baseline_reward[2]]*len(x_range), linestyle='--', label='Baseline Action 2 Reward')
+    plt.xlabel('Iterations')
+    plt.ylabel('Average Reward')
+    plt.title('Offline Training vs Baseline Policies')
+    plt.legend()
+    plt.grid(True)
+    plt.savefig(f"Offline Training vs Baseline Policies{iteration}.png")
+
+def plot_avg_action(G, iteration, message_trees):
+    actions_by_followers = defaultdict(lambda: {'total_actions': 0, 'count': 0})
+    actions_by_followings = defaultdict(lambda: {'total_actions': 0, 'count': 0})
+    for message_tree in message_trees:
+        for node in message_tree:
+            action = G.nodes[node].get('action', 0)
+            num_followers = len(G.nodes[node].get('followers', 0))
+            num_followings = len(G.nodes[node].get('followings', 0))
+            actions_by_followers[num_followers]['total_actions'] += action
+            actions_by_followers[num_followers]['count'] += 1
+            actions_by_followings[num_followings]['total_actions'] += action
+            actions_by_followings[num_followings]['count'] += 1
+
+    avg_action_by_followers = {
+        k: v['total_actions'] / v['count'] for k, v in actions_by_followers.items() if v['count'] > 0
+    }
+    avg_action_by_followings = {
+        k: v['total_actions'] / v['count'] for k, v in actions_by_followings.items() if v['count'] > 0
+    }
+    sorted_followers = sorted(avg_action_by_followers.keys())
+    sorted_followings = sorted(avg_action_by_followings.keys())
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(
+        sorted_followers,
+        [avg_action_by_followers[k] for k in sorted_followers],
+        label='Avg Action vs Followers'
+    )
+    plt.xlabel('Number of Followers')
+    plt.ylabel('Average Action')
+    plt.title('Average Action vs Number of Followers over 100 iterations')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(f'Avg_Action_vs_Followers_over_100_iterations_{iteration}.png')
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(
+        sorted_followings,
+        [avg_action_by_followings[k] for k in sorted_followings],
+        label='Avg Action vs Followings',
+        color='r'
+    )
+    plt.xlabel('Number of Followings')
+    plt.ylabel('Average Action')
+    plt.title('Average Action vs Number of Followings over 100 iterations')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.savefig(f'Avg_Action_vs_Followings_over_100_iterations_{iteration}.png')
+
